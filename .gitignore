@@ -1,0 +1,47 @@
+# ── Secrets & local config (NEVER commit) ──────────────────────────────────
+.env
+*.env
+!.env.example
+**/credentials/
+*.pem
+*.key
+id_rsa*
+
+# ── Runtime data: DB, indexes, uploads, sessions, eval outputs (real data) ──
+analytics-backend/storage/
+storage/
+*.db
+*.sqlite
+*.sqlite3
+**/faiss/
+**/uploads/
+**/sessions/
+**/eval_runs/
+**/eval_compare/
+
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# ── Node / build artifacts ──────────────────────────────────────────────────
+node_modules/
+dist/
+build/
+*.log
+
+# ── Launcher local logs ─────────────────────────────────────────────────────
+launcher/**/*.log
+.scratch/
+
+# ── OS / editor ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# apply_patches.ps1 backup files (not for distribution)
+*.kapi_orig

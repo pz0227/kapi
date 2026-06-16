@@ -1,0 +1,51 @@
+# Production Docker Compose for Kapi Analytics Backend
+# Usage: docker compose -f docker-compose.prod.yml up -d
+#
+# Required .env vars:
+#   ANTHROPIC_API_KEY or OPENAI_API_KEY (at least one)
+#
+# Optional (for SaaS mode):
+#   KAPI_AUTH_MODE=clerk
+#   CLERK_DOMAIN, CLERK_SECRET_KEY
+#   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+#   STRIPE_STARTER_PRICE_ID, STRIPE_PRO_PRICE_ID, STRIPE_TEAM_PRICE_ID
+
+services:
+  kapi-analytics:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      KAPI_ANALYTICS_PORT: "18792"
+      KAPI_AUTH_MODE: ${KAPI_AUTH_MODE:-local}
+      CLERK_DOMAIN: ${CLERK_DOMAIN:-}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_STARTER_PRICE_ID: ${STRIPE_STARTER_PRICE_ID:-}
+      STRIPE_PRO_PRICE_ID: ${STRIPE_PRO_PRICE_ID:-}
+      STRIPE_TEAM_PRICE_ID: ${STRIPE_TEAM_PRICE_ID:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      APP_URL: ${APP_URL:-http://localhost:18792}
+    volumes:
+      - kapi-data:/app/storage
+    ports:
+      - "${KAPI_ANALYTICS_PORT:-18792}:18792"
+    init: true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:18792/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+volumes:
+  kapi-data:

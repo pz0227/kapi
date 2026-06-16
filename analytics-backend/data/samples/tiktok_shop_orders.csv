@@ -1,0 +1,91 @@
+order_id,product_name,category,quantity,price,total_amount,discount,cost,order_status,created_time,buyer_id,country
+ORD-001,Phone Case Glitter,Accessories,2,8.99,17.98,0,3.50,Completed,2026-01-05 09:15:22,buyer_001,US
+ORD-002,LED Ring Light 10in,Electronics,1,24.99,24.99,2.50,12.00,Completed,2026-01-05 10:03:41,buyer_002,US
+ORD-003,Phone Case Glitter,Accessories,1,8.99,8.99,0,3.50,Returned,2026-01-05 11:22:05,buyer_003,UK
+ORD-004,Wireless Earbuds Pro,Electronics,1,39.99,39.99,5.00,18.00,Completed,2026-01-06 14:55:18,buyer_004,US
+ORD-005,Yoga Mat Premium,Sports,1,19.99,19.99,0,8.00,Completed,2026-01-07 08:30:00,buyer_005,CA
+ORD-006,Phone Case Glitter,Accessories,3,8.99,26.97,1.00,3.50,Completed,2026-01-08 12:00:00,buyer_006,US
+ORD-007,LED Ring Light 10in,Electronics,1,24.99,24.99,0,12.00,Completed,2026-01-09 15:20:00,buyer_002,US
+ORD-008,Resistance Bands Set,Sports,2,12.99,25.98,0,5.00,Completed,2026-01-10 09:45:00,buyer_007,US
+ORD-009,Phone Case Glitter,Accessories,1,8.99,8.99,0,3.50,Completed,2026-01-11 11:00:00,buyer_008,UK
+ORD-010,Wireless Earbuds Pro,Electronics,1,39.99,39.99,3.00,18.00,Completed,2026-01-12 16:30:00,buyer_009,DE
+ORD-011,Yoga Mat Premium,Sports,2,19.99,39.98,5.00,8.00,Completed,2026-01-13 10:15:00,buyer_010,US
+ORD-012,LED Ring Light 10in,Electronics,2,24.99,49.98,0,12.00,Completed,2026-01-14 14:00:00,buyer_011,US
+ORD-013,Phone Case Glitter,Accessories,1,8.99,8.99,0,3.50,Returned,2026-01-15 09:30:00,buyer_012,CA
+ORD-014,Water Bottle Insulated,Kitchen,1,15.99,15.99,0,6.00,Completed,2026-01-15 11:45:00,buyer_013,US
+ORD-015,Wireless Earbuds Pro,Electronics,1,39.99,39.99,0,18.00,Completed,2026-01-16 13:20:00,buyer_014,UK
+ORD-016,Phone Case Glitter,Accessories,2,8.99,17.98,0,3.50,Completed,2026-01-17 08:00:00,buyer_001,US
+ORD-017,Resistance Bands Set,Sports,1,12.99,12.99,0,5.00,Completed,2026-01-18 10:30:00,buyer_015,DE
+ORD-018,LED Ring Light 10in,Electronics,1,24.99,24.99,3.00,12.00,Completed,2026-01-19 15:45:00,buyer_016,US
+ORD-019,Yoga Mat Premium,Sports,1,19.99,19.99,0,8.00,Cancelled,2026-01-20 09:00:00,buyer_017,CA
+ORD-020,Phone Case Glitter,Accessories,1,8.99,8.99,0,3.50,Completed,2026-01-21 12:15:00,buyer_018,US
+ORD-021,Water Bottle Insulated,Kitchen,2,15.99,31.98,2.00,6.00,Completed,2026-01-22 14:30:00,buyer_019,US
+ORD-022,Wireless Earbuds Pro,Electronics,1,39.99,39.99,0,18.00,Completed,2026-01-23 16:00:00,buyer_020,UK
+ORD-023,LED Ring Light 10in,Electronics,2,24.99,49.98,5.00,12.00,Completed,2026-01-24 09:15:00,buyer_011,US
+ORD-024,Phone Case Glitter,Accessories,2,8.99,17.98,1.00,3.50,Completed,2026-01-25 11:00:00,buyer_021,DE
+ORD-025,Resistance Bands Set,Sports,1,12.99,12.99,0,5.00,Completed,2026-01-26 13:45:00,buyer_022,US
+ORD-026,Yoga Mat Premium,Sports,1,19.99,19.99,0,8.00,Completed,2026-01-27 08:30:00,buyer_023,CA
+ORD-027,Phone Case Glitter,Accessories,3,8.99,26.97,2.00,3.50,Completed,2026-01-28 10:00:00,buyer_006,US
+ORD-028,Wireless Earbuds Pro,Electronics,1,39.99,39.99,0,18.00,Returned,2026-01-29 15:00:00,buyer_024,US
+ORD-029,LED Ring Light 10in,Electronics,1,24.99,24.99,0,12.00,Completed,2026-01-30 09:30:00,buyer_025,UK
+ORD-030,Water Bottle Insulated,Kitchen,1,15.99,15.99,0,6.00,Completed,2026-01-31 12:00:00,buyer_026,US
+ORD-031,Phone Case Glitter,Accessories,2,8.99,17.98,0,3.50,Completed,2026-02-01 09:00:00,buyer_027,US
+ORD-032,LED Ring Light 10in,Electronics,2,24.99,49.98,3.00,12.00,Completed,2026-02-02 14:15:00,buyer_028,DE
+ORD-033,Wireless Earbuds Pro,Electronics,1,39.99,39.99,5.00,18.00,Completed,2026-02-03 10:30:00,buyer_029,US
+ORD-034,Yoga Mat Premium,Sports,2,19.99,39.98,0,8.00,Completed,2026-02-04 08:45:00,buyer_030,CA
+ORD-035,Phone Case Glitter,Accessories,1,8.99,8.99,0,3.50,Completed,2026-02-05 11:30:00,buyer_031,UK
+ORD-036,Resistance Bands Set,Sports,3,12.99,38.97,2.00,5.00,Completed,2026-02-06 13:00:00,buyer_032,US
+ORD-037,LED Ring Light 10in,Electronics,1,24.99,24.99,0,12.00,Completed,2026-02-07 15:30:00,buyer_033,US
+ORD-038,Water Bottle Insulated,Kitchen,1,15.99,15.99,0,6.00,Completed,2026-02-08 09:15:00,buyer_034,US
+ORD-039,Phone Case Glitter,Accessories,2,8.99,17.98,0,3.50,Completed,2026-02-09 12:00:00,buyer_001,US
+ORD-040,Wireless Earbuds Pro,Electronics,1,39.99,39.99,0,18.00,Completed,2026-02-10 14:45:00,buyer_035,DE
+ORD-041,LED Ring Light 10in,Electronics,3,24.99,74.97,5.00,12.00,Completed,2026-02-11 10:00:00,buyer_036,US
+ORD-042,Yoga Mat Premium,Sports,1,19.99,19.99,0,8.00,Completed,2026-02-12 08:30:00,buyer_037,CA
+ORD-043,Phone Case Glitter,Accessories,1,8.99,8.99,0,3.50,Completed,2026-02-13 11:15:00,buyer_038,US
+ORD-044,Resistance Bands Set,Sports,2,12.99,25.98,1.00,5.00,Completed,2026-02-14 13:30:00,buyer_039,UK
+ORD-045,LED Ring Light 10in,Electronics,1,24.99,24.99,0,12.00,Completed,2026-02-15 15:00:00,buyer_040,US
+ORD-046,Water Bottle Insulated,Kitchen,2,15.99,31.98,0,6.00,Completed,2026-02-16 09:45:00,buyer_041,US
+ORD-047,Wireless Earbuds Pro,Electronics,2,39.99,79.98,8.00,18.00,Completed,2026-02-17 12:30:00,buyer_042,US
+ORD-048,Phone Case Glitter,Accessories,1,8.99,8.99,0,3.50,Returned,2026-02-18 14:00:00,buyer_043,DE
+ORD-049,LED Ring Light 10in,Electronics,1,24.99,24.99,0,12.00,Completed,2026-02-19 10:15:00,buyer_044,CA
+ORD-050,Yoga Mat Premium,Sports,1,19.99,19.99,0,8.00,Completed,2026-02-20 08:00:00,buyer_045,US
+ORD-051,Phone Case Glitter,Accessories,2,8.99,17.98,1.00,3.50,Completed,2026-02-21 11:30:00,buyer_046,US
+ORD-052,Resistance Bands Set,Sports,1,12.99,12.99,0,5.00,Completed,2026-02-22 13:45:00,buyer_047,UK
+ORD-053,LED Ring Light 10in,Electronics,2,24.99,49.98,3.00,12.00,Completed,2026-02-23 15:30:00,buyer_048,US
+ORD-054,Wireless Earbuds Pro,Electronics,1,39.99,39.99,0,18.00,Completed,2026-02-24 09:00:00,buyer_049,DE
+ORD-055,Phone Case Glitter,Accessories,1,8.99,8.99,0,3.50,Completed,2026-02-25 12:15:00,buyer_050,US
+ORD-056,Water Bottle Insulated,Kitchen,1,15.99,15.99,0,6.00,Completed,2026-02-26 14:30:00,buyer_051,CA
+ORD-057,Yoga Mat Premium,Sports,2,19.99,39.98,2.00,8.00,Completed,2026-02-27 10:00:00,buyer_052,US
+ORD-058,LED Ring Light 10in,Electronics,1,24.99,24.99,0,12.00,Completed,2026-02-28 08:45:00,buyer_053,US
+ORD-059,Phone Case Glitter,Accessories,3,8.99,26.97,0,3.50,Completed,2026-03-01 11:00:00,buyer_054,UK
+ORD-060,Wireless Earbuds Pro,Electronics,1,39.99,39.99,5.00,18.00,Completed,2026-03-02 13:30:00,buyer_055,US
+ORD-061,LED Ring Light 10in,Electronics,2,24.99,49.98,0,12.00,Completed,2026-03-03 15:00:00,buyer_056,DE
+ORD-062,Resistance Bands Set,Sports,2,12.99,25.98,0,5.00,Completed,2026-03-04 09:30:00,buyer_057,US
+ORD-063,Yoga Mat Premium,Sports,1,19.99,19.99,0,8.00,Returned,2026-03-05 12:45:00,buyer_058,CA
+ORD-064,Phone Case Glitter,Accessories,1,8.99,8.99,0,3.50,Completed,2026-03-06 14:00:00,buyer_059,US
+ORD-065,Water Bottle Insulated,Kitchen,3,15.99,47.97,3.00,6.00,Completed,2026-03-07 10:15:00,buyer_060,US
+ORD-066,LED Ring Light 10in,Electronics,1,24.99,24.99,0,12.00,Completed,2026-03-08 08:30:00,buyer_061,UK
+ORD-067,Wireless Earbuds Pro,Electronics,2,39.99,79.98,0,18.00,Completed,2026-03-09 11:45:00,buyer_062,US
+ORD-068,Phone Case Glitter,Accessories,2,8.99,17.98,0,3.50,Completed,2026-03-10 13:00:00,buyer_063,DE
+ORD-069,LED Ring Light 10in,Electronics,1,24.99,24.99,2.00,12.00,Completed,2026-03-11 15:30:00,buyer_064,US
+ORD-070,Yoga Mat Premium,Sports,1,19.99,19.99,0,8.00,Completed,2026-03-12 09:00:00,buyer_065,CA
+ORD-071,Resistance Bands Set,Sports,1,12.99,12.99,0,5.00,Completed,2026-03-13 12:30:00,buyer_066,US
+ORD-072,Phone Case Glitter,Accessories,1,8.99,8.99,0,3.50,Completed,2026-03-14 14:15:00,buyer_067,UK
+ORD-073,LED Ring Light 10in,Electronics,2,24.99,49.98,5.00,12.00,Completed,2026-03-15 10:45:00,buyer_068,US
+ORD-074,Water Bottle Insulated,Kitchen,1,15.99,15.99,0,6.00,Completed,2026-03-16 08:00:00,buyer_069,US
+ORD-075,Wireless Earbuds Pro,Electronics,1,39.99,39.99,0,18.00,Completed,2026-03-17 11:30:00,buyer_070,DE
+ORD-076,Phone Case Glitter,Accessories,2,8.99,17.98,1.00,3.50,Completed,2026-03-18 13:45:00,buyer_001,US
+ORD-077,LED Ring Light 10in,Electronics,1,24.99,24.99,0,12.00,Completed,2026-03-19 15:00:00,buyer_071,CA
+ORD-078,Yoga Mat Premium,Sports,1,19.99,19.99,0,8.00,Completed,2026-03-20 09:30:00,buyer_072,US
+ORD-079,Resistance Bands Set,Sports,3,12.99,38.97,2.00,5.00,Completed,2026-03-21 12:00:00,buyer_073,UK
+ORD-080,Phone Case Glitter,Accessories,1,8.99,8.99,0,3.50,Completed,2026-03-22 14:30:00,buyer_074,US
+ORD-081,LED Ring Light 10in,Electronics,3,24.99,74.97,0,12.00,Completed,2026-03-23 10:00:00,buyer_075,US
+ORD-082,Wireless Earbuds Pro,Electronics,1,39.99,39.99,3.00,18.00,Completed,2026-03-24 08:15:00,buyer_076,DE
+ORD-083,Water Bottle Insulated,Kitchen,2,15.99,31.98,0,6.00,Completed,2026-03-25 11:45:00,buyer_077,US
+ORD-084,Phone Case Glitter,Accessories,2,8.99,17.98,0,3.50,Completed,2026-03-26 13:00:00,buyer_078,CA
+ORD-085,Yoga Mat Premium,Sports,2,19.99,39.98,5.00,8.00,Completed,2026-03-27 15:30:00,buyer_079,US
+ORD-086,LED Ring Light 10in,Electronics,1,24.99,24.99,0,12.00,Completed,2026-03-28 09:00:00,buyer_080,UK
+ORD-087,Resistance Bands Set,Sports,1,12.99,12.99,0,5.00,Completed,2026-03-29 12:15:00,buyer_081,US
+ORD-088,Phone Case Glitter,Accessories,1,8.99,8.99,0,3.50,Completed,2026-03-30 14:45:00,buyer_082,US
+ORD-089,Wireless Earbuds Pro,Electronics,2,39.99,79.98,0,18.00,Completed,2026-03-31 10:30:00,buyer_083,DE
+ORD-090,LED Ring Light 10in,Electronics,1,24.99,24.99,0,12.00,Completed,2026-03-31 08:00:00,buyer_084,US

@@ -1,0 +1,33 @@
+# Fly.io deployment config for Kapi Analytics Backend
+# Deploy: fly deploy --config services/analytics-backend/fly.toml
+# Secrets: fly secrets set ANTHROPIC_API_KEY=sk-ant-... OPENAI_API_KEY=sk-...
+
+app = "kapi-analytics"
+primary_region = "sjc"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  KAPI_ANALYTICS_PORT = "8080"
+  KAPI_AUTH_MODE = "clerk"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 100
+    soft_limit = 80
+
+[mounts]
+  source = "kapi_data"
+  destination = "/app/storage"
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "1gb"

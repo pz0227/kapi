@@ -1,0 +1,62 @@
+[
+  {
+    "id": "s1",
+    "question": "What is the monthly active user count and how does it compare to the previous month?",
+    "expected_keywords": ["MAU", "monthly", "active", "users", "change"],
+    "category": "kpi"
+  },
+  {
+    "id": "s2",
+    "question": "Which funnel step has the highest drop-off rate and what might explain it?",
+    "expected_keywords": ["drop", "funnel", "step", "conversion", "hypothesis"],
+    "category": "funnel"
+  },
+  {
+    "id": "s3",
+    "question": "What is the Day-7 retention rate for the most recent cohort?",
+    "expected_keywords": ["retention", "cohort", "day-7", "week"],
+    "category": "retention"
+  },
+  {
+    "id": "s4",
+    "question": "Which user segment generates the most revenue or engagement?",
+    "expected_keywords": ["segment", "plan", "enterprise", "engagement", "users"],
+    "category": "segmentation"
+  },
+  {
+    "id": "s5",
+    "question": "What are the top 3 most adopted features and which has the fastest growth?",
+    "expected_keywords": ["feature", "adoption", "rate", "growth", "users"],
+    "category": "features"
+  },
+  {
+    "id": "s6",
+    "question": "Recommend an A/B test to improve onboarding completion rate.",
+    "expected_keywords": ["experiment", "hypothesis", "onboarding", "test", "conversion", "treatment"],
+    "category": "recommendations"
+  },
+  {
+    "id": "s7",
+    "question": "Draft a weekly product review summary for the leadership team.",
+    "expected_keywords": ["weekly", "review", "KPI", "insights", "recommendation", "metric"],
+    "category": "reports"
+  },
+  {
+    "id": "s8",
+    "question": "Are there any anomalies in event volume over the past 30 days? What might have caused them?",
+    "expected_keywords": ["anomaly", "spike", "drop", "event", "volume", "cause"],
+    "category": "anomalies"
+  },
+  {
+    "id": "s9",
+    "question": "Which features are underperforming compared to their expected adoption given the user base size?",
+    "expected_keywords": ["underperforming", "feature", "adoption", "expected", "gap"],
+    "category": "features"
+  },
+  {
+    "id": "s10",
+    "question": "What is the average time from sign-up to first meaningful action?",
+    "expected_keywords": ["time-to-value", "sign-up", "first", "action", "onboarding"],
+    "category": "kpi"
+  }
+]

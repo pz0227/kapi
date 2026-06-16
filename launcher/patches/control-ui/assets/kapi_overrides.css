@@ -1,0 +1,99 @@
+/*
+ * kapi_overrides.css — fixes for upstream theme bugs.
+ *
+ * Loaded by a <link rel="stylesheet"> tag injected into
+ * dist/control-ui/index.html by apply_patches.ps1.
+ *
+ * --------------------------------------------------------------------------
+ * 1. The Dataset Preview modal (and several other surfaces) use
+ *    `background: var(--surface-1)` / `var(--surface-2)`, but neither
+ *    variable is defined anywhere in the upstream CSS. Browsers fall
+ *    through to the property's initial value (transparent), so users see
+ *    straight through the modal to the dashboard / sidebar behind it.
+ *    grep on `--surface-` in upstream index-*.css:
+ *        --surface-1: 11 uses, 0 definitions
+ *        --surface-2: 11 uses, 0 definitions
+ *
+ *    Affected elements (from the upstream CSS rules):
+ *        .pa-modal              ← user-reported "preview is semi-transparent"
+ *        .pa-card, .pa-kpi-card, .pa-anomaly-item
+ *        .pa-empty__icon, .pa-dataset-row
+ *        .pa-chat-msg--assistant, .pa-report-item
+ *        .pa-select, .pa-input, .pa-textarea
+ *        .pa-funnel-step__bar-container, .pa-retention-cell--zero
+ *        .pa-bar-inline, .pa-skeleton
+ *        .pa-session-item--active, .pa-chat-input
+ *        .pa-report-item--active
+ *
+ *    Fix: define both variables for every theme variant the SPA supports.
+ *    Values are picked to match the existing --bg-elevated / --card colors
+ *    so the result looks intentional, not jarring. We define them both at
+ *    :root (default) and per-theme so the cascade resolves correctly when
+ *    the user switches themes.
+ *
+ * 2. The modal backdrop (`.pa-modal-backdrop`) uses `#0009` (60% black)
+ *    which is fine, but combined with no modal background that produces
+ *    the see-through effect the user filed as a bug. Belt-and-suspenders
+ *    we also pin the modal background to `var(--bg-elevated)` directly
+ *    in case `--surface-1` ever gets defined to something transparent
+ *    in a future upstream version.
+ * --------------------------------------------------------------------------
+ */
+
+/* Default (dark) — applies when no [data-theme] attr is set */
+:root {
+  --surface-1: var(--bg-elevated, #191c24);
+  --surface-2: var(--card, #161920);
+}
+
+/* Light mode */
+:root[data-theme-mode="light"] {
+  --surface-1: #ffffff;
+  --surface-2: #f4f5f7;
+}
+
+/* Themed variants */
+:root[data-theme="openknot"] {
+  --surface-1: #141416;
+  --surface-2: #111113;
+}
+:root[data-theme="openknot-light"] {
+  --surface-1: #ffffff;
+  --surface-2: #f4f5f7;
+}
+:root[data-theme="dash"] {
+  --surface-1: #28201c;
+  --surface-2: #221a16;
+}
+:root[data-theme="dash-light"] {
+  --surface-1: #ffffff;
+  --surface-2: #f7f2ec;
+}
+
+/* Belt-and-suspenders: pin the dataset preview modal to an explicit
+ * opaque background. Even if --surface-1 ever gets redefined upstream
+ * to something transparent, this rule wins on specificity and keeps
+ * the preview readable. */
+.pa-modal {
+  background: var(--surface-1, var(--bg-elevated, #191c24)) !important;
+  /* Default upstream omits a shadow on .pa-modal — small box-shadow
+   * helps it pop visually against the 60%-black backdrop. */
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+/* Same fix for the modal backdrop — slightly stronger dim so the
+ * underlying page is clearly behind, not visually competing. */
+.pa-modal-backdrop {
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+/* While we're here: the dashboard insights cards we inject from
+ * kapi_dashboard_extras.js also benefit from a subtle hover state, and
+ * making them feel native means matching the existing .pa-card transition. */
+.kapi-dashboard-extras .pa-card {
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.kapi-dashboard-extras .pa-card:hover {
+  border-color: var(--border-strong, rgba(255, 255, 255, 0.16));
+}

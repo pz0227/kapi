@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kapi - AI Product Analyst for Your Business</title>
+<meta name="description" content="Upload your data, get instant product insights. AI-powered analytics, reports, and recommendations. No data science team required.">
+<style>
+:root {
+  --bg: #0b0f1a;
+  --card: #111827;
+  --border: rgba(148,163,184,0.12);
+  --fg: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #6366f1;
+  --accent-light: #a5b4fc;
+  --green: #10b981;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--fg); line-height: 1.6; }
+a { color: var(--accent-light); text-decoration: none; }
+
+/* Hero */
+.hero { text-align: center; padding: 100px 24px 60px; max-width: 800px; margin: 0 auto; }
+.hero-badge { display: inline-block; background: rgba(99,102,241,0.15); color: var(--accent-light); border: 1px solid rgba(99,102,241,0.3); padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; margin-bottom: 24px; }
+.hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 700; line-height: 1.15; margin-bottom: 20px; background: linear-gradient(135deg, #e2e8f0, #a5b4fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.hero p { font-size: 18px; color: var(--muted); max-width: 600px; margin: 0 auto 32px; }
+.hero-cta { display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px; border-radius: 10px; font-size: 15px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #4f46e5; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(99,102,241,0.3); }
+.btn-secondary { background: transparent; color: var(--fg); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--accent); }
+
+/* Features */
+.features { max-width: 1100px; margin: 0 auto; padding: 60px 24px; }
+.features h2 { text-align: center; font-size: 28px; margin-bottom: 48px; }
+.features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+.feature-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 28px; transition: border-color 0.2s; }
+.feature-card:hover { border-color: rgba(99,102,241,0.3); }
+.feature-card .icon { width: 40px; height: 40px; background: rgba(99,102,241,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 20px; }
+.feature-card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+.feature-card p { font-size: 14px; color: var(--muted); }
+
+/* How it works */
+.how { max-width: 900px; margin: 0 auto; padding: 60px 24px; }
+.how h2 { text-align: center; font-size: 28px; margin-bottom: 48px; }
+.steps { display: flex; flex-direction: column; gap: 32px; }
+.step { display: flex; gap: 20px; align-items: flex-start; }
+.step-num { width: 44px; height: 44px; min-width: 44px; background: var(--accent); color: #fff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
+.step h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.step p { font-size: 14px; color: var(--muted); }
+
+/* Pricing */
+.pricing { max-width: 1100px; margin: 0 auto; padding: 80px 24px; }
+.pricing h2 { text-align: center; font-size: 28px; margin-bottom: 12px; }
+.pricing .subtitle { text-align: center; color: var(--muted); font-size: 15px; margin-bottom: 48px; }
+.plans-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+.plan { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 28px; display: flex; flex-direction: column; }
+.plan.popular { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(99,102,241,0.3), 0 4px 24px rgba(99,102,241,0.1); position: relative; }
+.plan.popular::before { content: "Most Popular"; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; font-size: 11px; font-weight: 600; padding: 4px 14px; border-radius: 10px; }
+.plan-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+.plan-price { font-size: 36px; font-weight: 700; color: var(--accent-light); margin-bottom: 4px; }
+.plan-price span { font-size: 14px; color: var(--muted); font-weight: 400; }
+.plan-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.plan ul { list-style: none; margin-bottom: 24px; flex: 1; }
+.plan li { font-size: 13px; color: var(--muted); padding: 5px 0; }
+.plan li::before { content: "\2713 "; color: var(--green); font-weight: 600; }
+.plan .btn { width: 100%; justify-content: center; }
+
+/* CTA */
+.cta-section { text-align: center; padding: 80px 24px; background: linear-gradient(180deg, transparent, rgba(99,102,241,0.05)); }
+.cta-section h2 { font-size: 28px; margin-bottom: 16px; }
+.cta-section p { color: var(--muted); margin-bottom: 28px; font-size: 16px; }
+
+/* Footer */
+footer { text-align: center; padding: 40px 24px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; }
+
+/* Nav */
+nav { display: flex; align-items: center; justify-content: space-between; max-width: 1100px; margin: 0 auto; padding: 20px 24px; }
+.nav-logo { font-size: 22px; font-weight: 700; color: var(--fg); }
+.nav-links { display: flex; gap: 28px; align-items: center; }
+.nav-links a { color: var(--muted); font-size: 14px; font-weight: 500; }
+.nav-links a:hover { color: var(--fg); }
+
+@media (max-width: 640px) {
+  .nav-links { display: none; }
+  .plans-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Kapi</div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How It Works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="/pa-dashboard" class="btn btn-primary" style="padding: 8px 20px; font-size: 13px;">Open Dashboard</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <span class="hero-badge">AI-Powered Product Analytics</span>
+  <h1>Your Data. Real Insights. Zero Data Science Team.</h1>
+  <p>Upload your CSV, get instant KPIs, funnels, retention curves, and AI-generated product recommendations. Built for product managers who ship fast.</p>
+  <div class="hero-cta">
+    <a href="/pa-dashboard" class="btn btn-primary">Start Free</a>
+    <a href="#how" class="btn btn-secondary">See How It Works</a>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <h2>Everything a PM Needs in One Place</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="icon">&#x1f4ca;</div>
+      <h3>Instant KPI Dashboard</h3>
+      <p>Upload your events data and see DAU, WAU, revenue, conversion rates, and anomalies automatically detected.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">&#x1f50d;</div>
+      <h3>Funnel & Retention Analysis</h3>
+      <p>Drag-and-drop funnel builder, cohort retention curves, and feature adoption tracking with zero configuration.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">&#x1f916;</div>
+      <h3>AI Product Analyst</h3>
+      <p>Ask questions in plain English. Get answers grounded in your data with source citations, not hallucinations.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">&#x1f4dd;</div>
+      <h3>Auto-Generated Reports</h3>
+      <p>One-click PRDs, weekly reviews, stakeholder updates, and experiment briefs. Ready to paste into Notion or Slack.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">&#x1f9ea;</div>
+      <h3>Structured Insights</h3>
+      <p>Pricing optimization, churn risk, waste analysis, and growth opportunities detected automatically from your data.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">&#x1f512;</div>
+      <h3>Your Data Stays Yours</h3>
+      <p>Self-host or use our cloud. Data never leaves your infrastructure. SOC 2 compliant architecture.</p>
+    </div>
+  </div>
+</section>
+
+<section class="how" id="how">
+  <h2>Up and Running in 3 Minutes</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div>
+        <h3>Upload Your Data</h3>
+        <p>Drop in any CSV &mdash; events, users, transactions, feedback. Kapi auto-detects columns and data types.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div>
+        <h3>Get Instant Analytics</h3>
+        <p>KPIs, funnels, retention, and anomalies appear immediately. No SQL, no configuration, no waiting.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div>
+        <h3>Ask Your AI Analyst</h3>
+        <p>Chat with your data in plain English. Generate reports, get recommendations, and export stakeholder-ready summaries.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pricing" id="pricing">
+  <h2>Simple, Transparent Pricing</h2>
+  <p class="subtitle">Start free. Upgrade when you need more power.</p>
+  <div class="plans-grid">
+    <div class="plan">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">$0<span>/month</span></div>
+      <div class="plan-desc">For exploring and personal projects</div>
+      <ul>
+        <li>2 datasets, 10K rows each</li>
+        <li>20 AI messages/month</li>
+        <li>3 reports/month</li>
+        <li>Dashboard & basic analytics</li>
+      </ul>
+      <a href="/pa-dashboard" class="btn btn-secondary">Get Started</a>
+    </div>
+    <div class="plan">
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">$29<span>/month</span></div>
+      <div class="plan-desc">For solo PMs and indie hackers</div>
+      <ul>
+        <li>5 datasets, 50K rows each</li>
+        <li>200 AI messages/month</li>
+        <li>20 reports, 50 insights/month</li>
+        <li>AI Analyst chat</li>
+        <li>Funnel & retention analysis</li>
+      </ul>
+      <a href="/pa-billing" class="btn btn-primary">Upgrade</a>
+    </div>
+    <div class="plan popular">
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">$79<span>/month</span></div>
+      <div class="plan-desc">For growing product teams</div>
+      <ul>
+        <li>15 datasets, 500K rows each</li>
+        <li>1,000 AI messages/month</li>
+        <li>Unlimited reports & insights</li>
+        <li>Up to 5 team members</li>
+        <li>Eval suite & data export</li>
+      </ul>
+      <a href="/pa-billing" class="btn btn-primary">Upgrade</a>
+    </div>
+    <div class="plan">
+      <div class="plan-name">Team</div>
+      <div class="plan-price">$149<span>/month</span></div>
+      <div class="plan-desc">For teams that need it all</div>
+      <ul>
+        <li>50 datasets, 2M rows each</li>
+        <li>Unlimited AI messages</li>
+        <li>Unlimited reports & insights</li>
+        <li>Up to 20 team members</li>
+        <li>Priority support</li>
+      </ul>
+      <a href="/pa-billing" class="btn btn-primary">Upgrade</a>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <h2>Ready to Understand Your Product Better?</h2>
+  <p>Join product managers who ship with data, not guesswork.</p>
+  <a href="/pa-dashboard" class="btn btn-primary">Start Free &mdash; No Credit Card Required</a>
+</section>
+
+<footer>
+  <p>&copy; 2026 Kapi. AI-powered product analytics.</p>
+</footer>
+
+</body>
+</html>
