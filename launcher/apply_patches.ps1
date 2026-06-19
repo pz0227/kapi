@@ -296,6 +296,16 @@ $uiPatches = @(
         Old  = '@click=${()=>a.onSelectSession(t.id)}'
         New  = '@click=${()=>a.onSelectSession(t.id)} data-session-id=${t.id}'
         Desc = 'AI Analyst sessions — add data-session-id for right-click menu'
+    },
+    @{
+        # Remove the Billing tab from the Product Analysis nav (this is a
+        # non-commercial build — no paid plans). Drops `paBilling` from the
+        # nav-group tabs array; the label/icon/route entries elsewhere are
+        # harmless and simply never reached.
+        Glob = 'index-*.js'
+        Old  = '`paEval`,`paBilling`]'
+        New  = '`paEval`]'
+        Desc = 'Remove Billing tab from the Product Analysis nav (non-commercial build)'
     }
 )
 

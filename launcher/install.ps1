@@ -98,7 +98,7 @@ if (-not $SkipAnalytics) {
     if (-not $python) {
         Write-Warning @'
 Python 3.10+ not found. The Kapi gateway and Chat will still work, but the
-Product Analysis pages (Data, AI Analyst, Reports, Eval, Billing) will show
+Product Analysis pages (Data, AI Analyst, Reports, Eval) will show
 "Failed to fetch" because the analytics backend on :18792 cannot start.
 
 Install Python from https://www.python.org/downloads/ and re-run install.ps1,

@@ -14,8 +14,8 @@
 #    1b. Make sure the analytics backend is up on 127.0.0.1:18792. If not,
 #        start `python services/analytics-backend/main.py` from inside the
 #        npm-installed kapi package and wait for /api/health. Without this
-#        the Product Analysis pages (Data, AI Analyst, Reports, Eval,
-#        Billing) all show "Failed to fetch".
+#        the Product Analysis pages (Data, AI Analyst, Reports, Eval)
+#        all show "Failed to fetch".
 #    2. Get the dashboard URL with the embedded auth token by running
 #       `kapi dashboard --no-open` (the --no-open flag makes Kapi print the
 #       URL instead of launching the default browser).
@@ -52,7 +52,7 @@ public static extern bool ShowWindow(System.IntPtr hWnd, int nCmdShow);
 # ---- config ----------------------------------------------------------------
 $gatewayUrl   = 'http://127.0.0.1:18789'
 # The analytics backend is a separate FastAPI sidecar. The Product Analysis
-# pages (Data, AI Analyst, Reports, Eval, Billing) all fetch from :18792
+# pages (Data, AI Analyst, Reports, Eval) all fetch from :18792
 # directly — if it's down, the UI shell loads but every page shows
 # "Failed to fetch".
 $analyticsUrl = 'http://127.0.0.1:18792'
@@ -381,7 +381,7 @@ if ($bounceBackend) {
 }
 
 # ---- step 1b: ensure analytics backend is up -------------------------------
-# The Product Analysis pages (Data, AI Analyst, Reports, Eval, Billing) call
+# The Product Analysis pages (Data, AI Analyst, Reports, Eval) call
 # http://127.0.0.1:18792 directly. Without it, the UI shell loads but every
 # PA page renders "Failed to fetch". The backend ships inside the npm `kapi`
 # package as services/analytics-backend/main.py (FastAPI + uvicorn).

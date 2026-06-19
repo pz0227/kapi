@@ -18,7 +18,7 @@ from contextlib import asynccontextmanager
 from core.config import get_settings
 from core.database import init_db
 from core.logging_config import setup_logging
-from api.routes import data, analytics, chat, providers, reports, eval as eval_router, insights, billing, onboarding, export
+from api.routes import data, analytics, chat, providers, reports, eval as eval_router, insights, onboarding, export
 from services.providers.discovery import auto_discover_providers
 
 settings = get_settings()
@@ -77,7 +77,6 @@ app.include_router(providers.router, prefix="/api")
 app.include_router(reports.router,   prefix="/api")
 app.include_router(eval_router.router, prefix="/api")
 app.include_router(insights.router, prefix="/api")
-app.include_router(billing.router, prefix="/api")
 app.include_router(onboarding.router, prefix="/api")
 app.include_router(export.router, prefix="/api")
 

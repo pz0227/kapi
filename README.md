@@ -1,8 +1,3 @@
-<p align="center">
-  <!-- TODO: drop your logo here -->
-  <!-- <img src="docs/screenshots/kapi-logo.png" alt="Kapi" width="96" /> -->
-</p>
-
 <h1 align="center">Kapi — Local-First AI Product Analyst</h1>
 
 <p align="center">
@@ -54,17 +49,15 @@ desktop launcher** on top of it. See [Built on OpenClaw](#built-on-openclaw--lic
 
 ---
 
-## Screenshots
+## The interface
 
-> _Placeholders — drop your own images into `docs/screenshots/` and update the paths._
+Kapi runs as a local desktop app with five product-analysis views:
 
-| Dashboard | AI Analyst (RAG Q&A) |
-|---|---|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![AI Analyst](docs/screenshots/ai-analyst.png) |
-
-| Reports | Evaluation module |
-|---|---|
-| ![Reports](docs/screenshots/reports.png) | ![Eval](docs/screenshots/eval.png) |
+- **Dashboard** — KPI cards, an auto-generated insights panel (concentration, Pareto, skew), a top-categories bar chart, and a numeric-distribution histogram, all computed locally over the selected dataset.
+- **Data** — drag-and-drop upload and indexing for CSV / TSV / JSON / JSONL / XLSX / Parquet / XML, with automatic dataset-type detection (events, users, products, transactions, …).
+- **AI Analyst** — RAG-grounded Q&A over your data: ask questions in plain English and get answers with citations back to the rows used, plus low-groundedness flagging.
+- **Reports** — one-click PM deliverables (PRD opportunity summary, weekly review, executive brief, experiment proposal, feature-recommendation memo) generated from your data.
+- **Eval** — the evaluation module: a 51-case labeled test set scored on three separate axes (lexical support · answer correctness · refusal accuracy), failure-mode tagging with retriever-vs-model fault attribution, an LLM-as-judge with Cohen's κ calibration, and A/B comparison.
 
 ---
 

@@ -1,12 +1,15 @@
 /*
  * kapi_eval_pro.js — "Rigorous Eval" overlay for the Eval page.
  *
- * Adds a panel (separate from the upstream keyword eval) that runs the 3-axis
- * rigorous eval via POST /api/eval/run-rigorous and renders the results the way
- * the methodology demands: three SEPARATE axes (competence / honesty / lexical),
- * a failure-mode table WITH a fault-owner column, the self-documenting caveats,
- * and a per-case table. Pure DOM, no framework; document-level MutationObserver
- * so it survives Lit re-renders. Mirrors the kapi_dashboard_extras.js pattern.
+ * Adds a panel (separate from the upstream keyword eval) that:
+ *   - on open, auto-loads the most substantial SAVED report (GET /api/eval/reports
+ *     -> /api/eval/report/{id}) and renders it, so the view shows real results
+ *     immediately without waiting on a multi-minute live run;
+ *   - lets you launch a fresh run via POST /api/eval/run-rigorous.
+ * Renders the methodology view: three SEPARATE axes (competence / honesty /
+ * lexical), failure-mode table WITH a fault-owner column, judge-vs-deterministic
+ * Cohen's kappa, the self-documenting caveats, and a per-case table.
+ * Pure DOM, document-level MutationObserver so it survives Lit re-renders.
  */
 (function () {
   'use strict';
@@ -32,8 +35,38 @@
     return e;
   }
 
+  // Load the most substantial saved report (most cases) so the screenshot shows
+  // rich real results without a live run. Scans the few most recent runs.
+  async function loadLatest(statusEl, resultEl) {
+    statusEl.textContent = 'Loading latest saved eval report…';
+    try {
+      var listRes = await fetch(API + '/api/eval/reports');
+      if (!listRes.ok) { statusEl.textContent = 'No saved reports yet — click "Run Rigorous Eval" to generate one.'; return; }
+      var runs = (await listRes.json()).runs || [];
+      if (!runs.length) { statusEl.textContent = 'No saved reports yet — click "Run Rigorous Eval" to generate one.'; return; }
+      var best = null;
+      for (var i = 0; i < Math.min(runs.length, 6); i++) {
+        try {
+          var d = await (await fetch(API + '/api/eval/report/' + encodeURIComponent(runs[i]))).json();
+          if (!best || (d.n_cases || 0) > (best.n_cases || 0) ||
+              ((d.n_cases || 0) === (best.n_cases || 0) && d.judge_calibration && !best.judge_calibration)) {
+            best = d;
+          }
+          if ((best.n_cases || 0) >= 40 && best.judge_calibration) break; // good enough
+        } catch (e) { /* skip unreadable run */ }
+      }
+      if (!best) { statusEl.textContent = 'Could not read saved reports — click "Run Rigorous Eval".'; return; }
+      var rid = (best.meta && best.meta.run_id) || '';
+      statusEl.innerHTML = 'Showing saved run <b>' + rid + '</b> — ' + (best.n_cases || 0) +
+        ' cases. <span style="opacity:.7">(Click "Run Rigorous Eval" for a fresh run.)</span>';
+      render(best, resultEl);
+    } catch (e) {
+      statusEl.textContent = 'Could not load saved reports: ' + (e && e.message ? e.message : e);
+    }
+  }
+
   async function runRigorous(limit, topK, statusEl, resultEl) {
-    statusEl.textContent = 'Running rigorous eval… (this calls the live LLM per case; may take a minute)';
+    statusEl.textContent = 'Running rigorous eval… (calls the live LLM per case; a full run can take minutes)';
     resultEl.innerHTML = '';
     try {
       var res = await fetch(API + '/api/eval/run-rigorous', {
@@ -89,6 +122,15 @@
               ' — retriever-fault needs chunking/aggregation; model-fault needs prompt/model work.</div>';
     }
 
+    // Judge calibration (meta-metric on the same-model judge)
+    var jc = d.judge_calibration;
+    if (jc) {
+      var nd = jc.disagreements ? jc.disagreements.length : 0;
+      html += '<div style="font-size:12px;margin:6px 0 14px;padding:8px 12px;background:var(--bg-secondary,#f4f5f7);border-radius:6px">' +
+              'Judge vs deterministic: agreement <b>' + pct(jc.agreement) + '</b>, Cohen’s κ <b>' + jc.cohens_kappa +
+              '</b> (' + jc.n + ' cases, ' + nd + ' disagreements) — chance-corrected meta-metric on the same-model judge.</div>';
+    }
+
     // Caveats — self-documenting
     if (d.caveats && d.caveats.length) {
       html += '<details style="margin:8px 0 14px"><summary style="cursor:pointer;font-weight:600">' +
@@ -131,11 +173,12 @@
     var card = el('div', { id: PANEL_ID, class: 'pa-card', style: 'margin-top:16px' });
     card.appendChild(el('h3', { class: 'pa-card__title' }, 'Rigorous Eval (labeled test set · 3 axes · fault attribution)'));
     card.appendChild(el('p', { style: 'font-size:12px;opacity:.75;margin:0 0 10px' },
-      'Runs the 32-case labeled set (answerable / unanswerable / adversarial), scores competence + honesty + lexical separately, ' +
-      'and attributes each failure to the retriever or the model. Gold is computed from the data — nothing hardcoded.'));
+      'A 51-case labeled set (answerable / unanswerable / adversarial) with gold computed from the data. Scores ' +
+      'competence + honesty + lexical separately, attributes each failure to the retriever or the model, and (with --judge) ' +
+      'reports an LLM-as-judge Cohen’s κ. Nothing hardcoded.'));
 
     var controls = el('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px' });
-    var limitInput = el('input', { type: 'number', class: 'pa-input', value: '0', title: 'limit (0 = all 32)', style: 'width:90px' });
+    var limitInput = el('input', { type: 'number', class: 'pa-input', value: '0', title: 'limit (0 = all 51)', style: 'width:90px' });
     var topkInput = el('input', { type: 'number', class: 'pa-input', value: '6', title: 'retrieval top_k', style: 'width:90px' });
     var runBtn = el('button', { class: 'btn btn--primary' }, 'Run Rigorous Eval');
     controls.appendChild(el('span', { style: 'font-size:12px' }, 'limit'));
@@ -154,7 +197,11 @@
       runRigorous(parseInt(limitInput.value || '0', 10), parseInt(topkInput.value || '6', 10), status, result);
     });
 
-    page.appendChild(card);
+    // Insert at the TOP of the page so the rigorous results are immediately
+    // visible (above the legacy keyword-eval panel), not below the fold.
+    page.insertBefore(card, page.firstChild);
+    // Auto-load the latest saved report so the view shows real results on open.
+    loadLatest(status, result);
   }
 
   function start() {
