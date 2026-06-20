@@ -151,9 +151,8 @@ Reports are written to `analytics-backend/storage/eval_runs/<run_id>/` (gitignor
   are listed so you can inspect where the judge and the deterministic metrics diverge.
 
 Full methodology, design rationale, and known limitations:
-[`analytics-backend/services/eval/METHODOLOGY.md`](analytics-backend/services/eval/METHODOLOGY.md)
+[`METHODOLOGY.md`](analytics-backend/services/eval/METHODOLOGY.md)
 · run guide: [`HOW_TO_RUN.md`](analytics-backend/services/eval/HOW_TO_RUN.md)
-· gateway troubleshooting: [`GATEWAY_RECOVERY.md`](analytics-backend/services/eval/GATEWAY_RECOVERY.md)
 
 ---
 
