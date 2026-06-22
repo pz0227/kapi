@@ -30,10 +30,32 @@ setup_logging(debug=settings.debug, json_output=(settings.auth_mode != "local"))
 ANALYTICS_DEFAULT_PORT = 18792
 
 
+def _warm_embedder_in_background():
+    """Pre-load the sentence-transformers embedding model in a daemon thread.
+
+    The first retrieval/eval/report query otherwise pays a ~45s one-time cost
+    (importing transformers/torch + loading the model). Warming it in the
+    background at startup moves that cost OFF the user's critical path, so the
+    first AI Analyst / eval / report query returns warm. Best-effort: never
+    blocks startup and never fails it.
+    """
+    import threading
+
+    def _warm():
+        try:
+            from services.rag.embedder import embed_query
+            embed_query("warmup")
+        except Exception:
+            pass  # warm-up is purely an optimization; ignore any failure
+
+    threading.Thread(target=_warm, name="embedder-warmup", daemon=True).start()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
     await auto_discover_providers()
+    _warm_embedder_in_background()
     yield
 
 
