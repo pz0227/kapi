@@ -49,15 +49,34 @@ desktop launcher** on top of it. See [Built on OpenClaw](#built-on-openclaw--lic
 
 ---
 
-## The interface
+## Screenshots
 
-Kapi runs as a local desktop app with five product-analysis views:
+Kapi runs as a local desktop app with five product-analysis views.
 
-- **Dashboard** — KPI cards, an auto-generated insights panel (concentration, Pareto, skew), a top-categories bar chart, and a numeric-distribution histogram, all computed locally over the selected dataset.
-- **Data** — drag-and-drop upload and indexing for CSV / TSV / JSON / JSONL / XLSX / Parquet / XML, with automatic dataset-type detection (events, users, products, transactions, …).
-- **AI Analyst** — RAG-grounded Q&A over your data: ask questions in plain English and get answers with citations back to the rows used, plus low-groundedness flagging.
-- **Reports** — one-click PM deliverables (PRD opportunity summary, weekly review, executive brief, experiment proposal, feature-recommendation memo) generated from your data.
-- **Eval** — the evaluation module: a 51-case labeled test set scored on three separate axes (lexical support · answer correctness · refusal accuracy), failure-mode tagging with retriever-vs-model fault attribution, an LLM-as-judge with Cohen's κ calibration, and A/B comparison.
+### Dashboard — KPIs, insights & charts
+Auto-generated insights (concentration, Pareto, skew), a top-categories bar chart, and a numeric-distribution histogram, computed locally over the selected dataset.
+
+![Kapi Dashboard](docs/screenshots/dashboard.png)
+
+### Data — upload & index datasets
+Drag-and-drop upload and indexing for CSV / TSV / JSON / JSONL / XLSX / Parquet / XML, with automatic dataset-type detection (events, users, products, transactions, …).
+
+![Kapi Data](docs/screenshots/data.png)
+
+### AI Analyst — RAG-grounded Q&A
+Ask questions in plain English and get answers grounded in your data, with low-groundedness flagging.
+
+![Kapi AI Analyst](docs/screenshots/ai-analyst.png)
+
+### Reports — auto-generated PM deliverables
+One-click PRD opportunity summary, weekly review, executive brief, experiment proposal, or feature-recommendation memo, generated from your data.
+
+![Kapi Reports](docs/screenshots/reports.png)
+
+### Eval — three axes, failure modes & judge κ
+A 51-case labeled test set scored on three separate axes (lexical support · answer correctness · refusal accuracy), failure-mode tagging with retriever-vs-model fault attribution, and an LLM-as-judge with Cohen's κ calibration.
+
+![Kapi Eval](docs/screenshots/eval.png)
 
 ---
 
