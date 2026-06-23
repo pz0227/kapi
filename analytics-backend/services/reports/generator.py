@@ -184,6 +184,16 @@ async def generate_report(
         raise ValueError(f"Unknown report type: {report_type}")
 
     system = template.format(date=date.today().isoformat())
+    # Human-friendly output: the UI renders report text as plain text, so
+    # markdown markup shows up as literal characters. Ask for clean prose with
+    # plain headings and simple lists instead.
+    system += (
+        "\n\nFORMATTING: Write the report in clean, readable plain text. Put each "
+        "section heading on its own line in plain words (e.g. 'Hypothesis' — NOT "
+        "'## Hypothesis' or '**Hypothesis**'). Use short paragraphs and simple "
+        "'- ' or '1.' lists. Do NOT use any markdown markup symbols (**, *, #, "
+        "backticks) — they render as literal characters and hurt readability."
+    )
 
     user_message = "Based on the following product analytics data, generate the requested report.\n\n"
     if context:
