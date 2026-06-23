@@ -43,6 +43,8 @@ def _warm_embedder_in_background():
 
     def _warm():
         try:
+            import time
+            time.sleep(8)  # let the app finish opening before spending CPU on the model load
             from services.rag.embedder import embed_query
             embed_query("warmup")
         except Exception:
