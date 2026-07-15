@@ -46,6 +46,7 @@ from services.providers import get_provider
 from services.providers.registry import get_fallback_provider
 from services.providers.base import Message
 from services.rag import retrieve, format_context, groundedness_score
+from services.analytics.aggregate_router import try_compute_answer
 from services.analytics import compute_executive_summary, compute_kpis, compute_funnel, compute_retention, compute_feature_adoption, auto_detect_funnel
 from api.routes.providers import update_provider_error
 
@@ -284,6 +285,19 @@ async def chat(
     with timer.stage("context_build"):
         context_str = format_context(sources)
 
+    # Compute-first (Phase 2): aggregate questions get exact answers computed
+    # over the FULL dataset. Additive to RAG context — a false positive only
+    # adds a correct fact; it can never degrade the answer.
+    if dataset_ids:
+        with timer.stage("compute_first"):
+            ds_result = await db.execute(select(Dataset).where(Dataset.id.in_(dataset_ids)))
+            compute_blocks = [
+                b for ds in ds_result.scalars().all()
+                if (b := try_compute_answer(body.message, ds.filepath, ds.filename))
+            ]
+        if compute_blocks:
+            context_str = "\n\n".join(compute_blocks) + (("\n\n" + context_str) if context_str else "")
+
     # Build conversation history
     history_result = await db.execute(
         select(ChatMessage)
@@ -426,6 +440,17 @@ async def chat_stream(
         sources = retrieve(body.message, dataset_ids)
     with timer.stage("context_build"):
         context_str = format_context(sources)
+
+    # Compute-first (Phase 2): see /chat — additive exact aggregates over the full dataset
+    if dataset_ids:
+        with timer.stage("compute_first"):
+            ds_result = await db.execute(select(Dataset).where(Dataset.id.in_(dataset_ids)))
+            compute_blocks = [
+                b for ds in ds_result.scalars().all()
+                if (b := try_compute_answer(body.message, ds.filepath, ds.filename))
+            ]
+        if compute_blocks:
+            context_str = "\n\n".join(compute_blocks) + (("\n\n" + context_str) if context_str else "")
 
     history_result = await db.execute(
         select(ChatMessage)
