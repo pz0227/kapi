@@ -33,8 +33,8 @@ _AGG_PATTERNS: dict[str, list[str]] = {
     "sum":    [r"\btotal\b", r"\bsum\b", r"\boverall\b", r"\bcombined\b", r"总共", r"总和", r"一共", r"合计"],
     "mean":   [r"\baverage\b", r"\bavg\b", r"\bmean\b", r"平均"],
     "count":  [r"\bhow many\b", r"\bcount\b", r"\bnumber of\b", r"多少(条|个|行|笔)", r"几(条|个|笔)"],
-    "max":    [r"\bhighest\b", r"\bmax(imum)?\b", r"\blargest\b", r"\bbiggest\b", r"最高", r"最大"],
-    "min":    [r"\blowest\b", r"\bmin(imum)?\b", r"\bsmallest\b", r"最低", r"最小"],
+    "max":    [r"\bhighest\b", r"\bmax(imum)?\b", r"\blargest\b", r"\bbiggest\b", r"\blongest\b", r"最高", r"最大", r"最长"],
+    "min":    [r"\blowest\b", r"\bmin(imum)?\b", r"\bsmallest\b", r"\bshortest\b", r"最低", r"最小", r"最短"],
     "median": [r"\bmedian\b", r"中位"],
 }
 
@@ -43,19 +43,72 @@ _GROUPBY_PATTERNS = [r"\bby\b", r"\bper\b", r"\bfor each\b", r"\bbreakdown\b", r
 # Category-level questions: "which country has the most users", "most common
 # referral source", "second most frequent event type", "fewest users".
 _TOP_LABEL_PATTERNS = [
-    r"\bwhich\b.{0,60}\b(most|highest|largest|top|fewest|least|lowest)\b",
+    r"\bwhich\b.{0,60}\b(most|highest|largest|top|fewest|least|lowest|longest|shortest)\b",
     r"\bmost (common|frequent|popular)\b",
-    r"\b(second|2nd)[- ]most\b",
+    r"\b(second|2nd)[- ](most|largest|biggest|highest)\b",
     r"最(常见|多|少|热门)",
 ]
-_LEAST_PATTERNS = [r"\bfewest\b", r"\bleast\b", r"\blowest\b", r"最少"]
-_SECOND_PATTERNS = [r"\b(second|2nd)[- ](most|largest|biggest|highest)\b", r"第二"]
+_LEAST_PATTERNS = [r"\bfewest\b", r"\bleast\b", r"\blowest\b", r"\bshortest\b", r"最少", r"最短"]
+_SECOND_PATTERNS = [r"\b(second|2nd)[- ](most|largest|biggest|highest)\b", r"second-highest", r"第二"]
+
+# Question-vocabulary → column-vocabulary bridges: users say "revenue" and
+# "order value"; schemas say total_amount / gmv / price.
+_COLUMN_SYNONYMS = {
+    "value":   {"amount", "total"},
+    "revenue": {"amount", "total", "gmv", "sales", "price"},
+    "spend":   {"amount", "cost", "total"},
+    "sales":   {"amount", "total", "gmv"},
+}
 
 # Share/percentage questions: "what percentage of users are on the pro plan".
 _SHARE_PATTERNS = [r"\bpercentage\b", r"\bpercent\b", r"\bshare of\b", r"\bproportion\b", r"占比", r"百分比", r"比例"]
 
 # Distinct-count questions: "how many distinct countries".
 _NUNIQUE_PATTERNS = [r"\bdistinct\b", r"\bunique\b", r"\bhow many different\b", r"多少种", r"几种"]
+
+# Time-scoped questions ("revenue in Q3 2024", "last month") — the router has
+# no date filtering, so an all-time aggregate would silently answer a
+# different question than the one asked. Refusing to fire is the honest move.
+_TIME_SCOPE_PATTERN = re.compile(
+    r"\b(19|20)\d{2}\b|\bq[1-4]\b"
+    r"|\b(last|past|previous|this|next)\s+(week|month|quarter|year|day)\b"
+    r"|\b(january|february|march|april|may|june|july|august|september|october|november|december)\b"
+    r"|\byesterday\b|\btoday\b|去年|上(个)?月|本月|今年|季度"
+)
+
+# Generic count nouns that any tabular dataset can answer ("how many rows").
+_GENERIC_COUNT_NOUNS = {"row", "rows", "record", "records", "entry", "entries",
+                        "item", "items", "data", "datapoints", "points", "line", "lines"}
+
+
+def _count_noun_matches_data(q_lower: str, filename: str, columns: list[str], df) -> bool:
+    """
+    For "how many X" questions, check that X actually names something in this
+    dataset (filename, a column, or a categorical value). 'How many support
+    tickets' against a users table must NOT answer row_count = 500.
+    """
+    m = re.search(r"(?:how many|number of)\s+([a-z_][a-z_ \-]{1,40}?)(?:\s+(?:are|is|do|did|does|were|was|have|has|in|on|for|per|by|with|from)\b|\?|$)", q_lower)
+    if not m:
+        return True  # no extractable noun — stay permissive
+    noun_words = {w for w in re.split(r"[\s\-_]+", m.group(1)) if len(w) >= 2}
+    if noun_words & _GENERIC_COUNT_NOUNS:
+        return True
+    vocab: set[str] = set()
+    for w in re.split(r"[\s\-_\.]+", filename.lower()):
+        vocab |= _word_variants(w)
+    for col in columns:
+        for w in re.split(r"[_\s]+", col.lower()):
+            vocab |= _word_variants(w)
+    try:
+        for col in columns:
+            s = df[col]
+            if s.dtype == object and s.nunique() <= 50:
+                for v in s.dropna().unique():
+                    if isinstance(v, str):
+                        vocab |= _word_variants(v.lower())
+    except Exception:
+        pass
+    return bool(noun_words & vocab)
 
 _MAX_GROUPS_SHOWN = 12  # keep the injected block compact
 
@@ -88,12 +141,17 @@ def _word_variants(w: str) -> set[str]:
 def _match_columns(question: str, columns: list[str]) -> list[str]:
     """Columns whose name (or snake_case words, incl. plural forms) appear in the question."""
     q = question.lower()
+    # Vocabulary bridges active for this question ("revenue" → amount/gmv/...)
+    syn_targets: set[str] = set()
+    for key, cands in _COLUMN_SYNONYMS.items():
+        if re.search(rf"\b{key}\b", q):
+            syn_targets |= cands
     hits = []
     for col in columns:
         col_l = col.lower()
         words = [w for w in re.split(r"[_\s]+", col_l) if len(w) >= 3]
         variants = set().union(*(_word_variants(w) for w in words)) if words else set()
-        if col_l in q or any(v in q for v in variants):
+        if col_l in q or any(v in q for v in variants) or any(w in syn_targets for w in words):
             hits.append(col)
     return hits
 
@@ -165,6 +223,12 @@ def try_compute_answer(question: str, filepath: str, filename: str) -> str | Non
         if not ops and not wants_groupby and not wants_top_label and not wants_share and not wants_nunique:
             return None
 
+        # Honesty guard 1: time-scoped questions. We can't filter by date, so
+        # an all-time number would answer a DIFFERENT question. Stay silent.
+        if _TIME_SCOPE_PATTERN.search(q_lower):
+            log.info("COMPUTE suppressed: time-scoped question, no date filtering support")
+            return None
+
         import pandas as pd
 
         path = Path(filepath)
@@ -187,7 +251,8 @@ def try_compute_answer(question: str, filepath: str, filename: str) -> str | Non
         cat_cols = [c for c in df.columns if c not in numeric_cols]
 
         mentioned = _match_columns(question, df.columns.tolist())
-        target_numeric = [c for c in mentioned if c in numeric_cols] or numeric_cols[:2]
+        mentioned_numeric = [c for c in mentioned if c in numeric_cols]
+        target_numeric = mentioned_numeric or numeric_cols[:2]
         group_col = next((c for c in mentioned if c in cat_cols and df[c].nunique() <= 50), None)
 
         # Filtered aggregates: "total revenue in EU" applies region == "EU"
@@ -211,14 +276,22 @@ def try_compute_answer(question: str, filepath: str, filename: str) -> str | Non
         if wants_nunique:
             nunique_cols = [c for c in mentioned] or cat_cols[:2]
             for col in nunique_cols[:2]:
-                lines.append(f"distinct_count({col}) = {int(df[col].nunique())}")
+                # Counting distinct values of a column we filtered BY is
+                # degenerate (always = number of matched values) — count on
+                # the full frame instead.
+                base = df_full if col in filters else df
+                lines.append(f"distinct_count({col}) = {int(base[col].nunique())}")
 
-        # Row count is cheap and almost always useful for aggregate questions
-        if ("count" in ops or not ops) and not wants_nunique:
-            if filters:
-                lines.append(f"row_count{filter_desc} = {len(df)} (of {total_rows} total)")
-            else:
-                lines.append(f"row_count = {total_rows}")
+        # Row count — but only for EXPLICIT count questions, and only when the
+        # counted noun actually names something in THIS dataset ("how many
+        # support tickets" on a users table must stay silent). A bare
+        # row_count answering an unrelated question is noise wearing a suit.
+        if "count" in ops and not wants_nunique:
+            if _count_noun_matches_data(q_lower, filename, df_full.columns.tolist(), df_full):
+                if filters:
+                    lines.append(f"row_count{filter_desc} = {len(df)} (of {total_rows} total)")
+                else:
+                    lines.append(f"row_count = {total_rows}")
 
         # Share/percentage: fraction of rows matching the mentioned values.
         if wants_share and filters:
@@ -231,11 +304,28 @@ def try_compute_answer(question: str, filepath: str, filename: str) -> str | Non
             is_second = any(re.search(p, q_lower) for p in _SECOND_PATTERNS)
             label_cols = [c for c in mentioned if c in cat_cols and df[c].nunique() <= 50] or \
                          [c for c in cat_cols if df[c].nunique() <= 50][:1]
+            # Rank categories by a numeric aggregate when the question names a
+            # numeric column ("longest average duration", "second-highest by
+            # revenue"); otherwise rank by frequency.
+            rank_op = "mean" if ("mean" in ops or re.search(r"\baverage\b|平均", q_lower)) else "sum"
             for col in label_cols[:2]:
                 # Ranking a column we just filtered BY would be circular
                 # ("most common referral_source among rows where
                 # referral_source == X" is always X) — rank on the full frame.
                 base = df_full if col in filters else df
+                if mentioned_numeric:
+                    num = mentioned_numeric[0]
+                    ranked = getattr(base.groupby(col)[num], rank_op)().sort_values(ascending=False)
+                    label = f"{rank_op}({num}) by {col}"
+                    if ranked.empty:
+                        continue
+                    if is_second and len(ranked) >= 2:
+                        lines.append(f"second_highest {label} = '{ranked.index[1]}' ({round(float(ranked.iloc[1]), 2)})")
+                    elif is_least:
+                        lines.append(f"lowest {label} = '{ranked.index[-1]}' ({round(float(ranked.iloc[-1]), 2)})")
+                    else:
+                        lines.append(f"highest {label} = '{ranked.index[0]}' ({round(float(ranked.iloc[0]), 2)})")
+                    continue
                 vc = base[col].value_counts()
                 if vc.empty:
                     continue
@@ -246,7 +336,10 @@ def try_compute_answer(question: str, filepath: str, filename: str) -> str | Non
                 else:
                     lines.append(f"most_common({col}) = '{vc.index[0]}' ({int(vc.iloc[0])} rows)")
 
-        for col in target_numeric[:2]:
+        # Honesty guard 3: numeric ops run ONLY on columns the question names
+        # (directly or via synonyms). Computing mean(event_count) because
+        # someone asked for "average customer age" is worse than silence.
+        for col in mentioned_numeric[:2]:
             series = df[col].dropna()
             if series.empty:
                 continue
@@ -260,7 +353,7 @@ def try_compute_answer(question: str, filepath: str, filename: str) -> str | Non
                     continue
 
         if wants_groupby and group_col:
-            agg_col = target_numeric[0] if target_numeric else None
+            agg_col = mentioned_numeric[0] if mentioned_numeric else None
             op = next((o for o in ops if o != "count"), None)
             if agg_col and op:
                 grouped = getattr(df.groupby(group_col)[agg_col], op)().sort_values(ascending=False)

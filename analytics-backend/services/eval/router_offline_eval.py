@@ -29,6 +29,16 @@ from services.eval.gold import compute_gold  # noqa: E402
 SAMPLES_DIR = BACKEND_ROOT / "data" / "samples"
 TESTSET = BACKEND_ROOT / "data" / "eval_testset.json"
 
+# Case dataset names → sample files. An unmapped dataset is reported loudly,
+# never skipped silently (this very script shipped with a silent-skip bug that
+# hid 12 of 31 cases — the exact failure class this project exists to prevent).
+DATASET_FILES = {
+    "users": "users.csv",
+    "events": "events.csv",
+    "features": "feature_usage.csv",
+    "orders": "tiktok_shop_orders.csv",
+}
+
 
 def _numbers_in(text: str) -> list[float]:
     return [float(x) for x in re.findall(r"-?\d+(?:\.\d+)?", text.replace(",", ""))]
@@ -54,11 +64,13 @@ def main() -> int:
     answerable = [c for c in cases if c["category"] == "answerable"]
     other = [c for c in cases if c["category"] != "answerable"]
 
-    covered, correct, misses = [], [], []
+    covered, correct, misses, skipped = [], [], [], []
     for c in answerable:
         g = gold.get(c["id"])
-        ds_file = SAMPLES_DIR / f"{c['dataset']}.csv"
-        if g is None or not ds_file.exists():
+        fname = DATASET_FILES.get(c["dataset"])
+        ds_file = (SAMPLES_DIR / fname) if fname else None
+        if g is None or ds_file is None or not ds_file.exists():
+            skipped.append((c["id"], c["dataset"], "no gold" if g is None else "no sample file mapping"))
             continue
         block = try_compute_answer(c["question"], str(ds_file), ds_file.name)
         if block is None:
@@ -72,24 +84,29 @@ def main() -> int:
 
     fired_on_other = []
     for c in other:
-        ds_file = SAMPLES_DIR / f"{c['dataset']}.csv"
-        if not ds_file.exists():
+        fname = DATASET_FILES.get(c["dataset"])
+        if not fname or not (SAMPLES_DIR / fname).exists():
             continue
+        ds_file = SAMPLES_DIR / fname
         if try_compute_answer(c["question"], str(ds_file), ds_file.name):
             fired_on_other.append((c["id"], c["category"]))
 
-    n = len([c for c in answerable if gold.get(c["id"])])
+    n = len(answerable) - len(skipped)
     print("=" * 72)
     print(f"ROUTER OFFLINE EVAL  (deterministic layer only, no LLM)")
     print(f"Answerable cases with computable gold : {n}")
     print(f"Router fired (coverage)               : {len(covered)}/{n}  ({100*len(covered)/max(n,1):.0f}%)")
     print(f"Exact gold value in computed block    : {len(correct)}/{n}  ({100*len(correct)/max(n,1):.0f}%)")
-    print(f"Fired on unanswerable/adversarial     : {len(fired_on_other)}/{len(other)} (additive by design; values are still real)")
+    print(f"Fired on unanswerable/adversarial     : {len(fired_on_other)}/{len(other)}  (target 0 — silence beats plausible-but-wrong)")
     print("-" * 72)
     if misses:
         print("MISSES:")
         for cid, q, why in misses:
             print(f"  [{cid}] {q!r}\n      -> {why}")
+    if skipped:
+        print("SKIPPED (not scored — fix the mapping or gold!):")
+        for cid, ds, why in skipped:
+            print(f"  [{cid}] dataset={ds}: {why}")
     print("=" * 72)
     return 0
 

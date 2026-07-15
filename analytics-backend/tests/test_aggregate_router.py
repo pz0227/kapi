@@ -170,3 +170,41 @@ def test_value_subtoken_matching():
         str(SAMPLES / "events.csv"), "events.csv")
     assert block is not None
     assert "share where platform in" in block
+
+
+# ── Honesty guards: the router must know when NOT to speak ───────────────────
+# Found by auditing router output on the eval set's unanswerable/adversarial
+# cases: an "additive" block is NOT harmless when it answers a different
+# question than the one asked.
+
+def test_time_scoped_question_suppressed():
+    """No date filtering support → an all-time sum would silently answer a
+    different question than 'revenue in Q3 2024'. Must stay silent."""
+    assert try_compute_answer(
+        "What was the total shop revenue in Q3 2024?",
+        str(SAMPLES / "tiktok_shop_orders.csv"), "tiktok_shop_orders.csv") is None
+
+
+def test_unrelated_count_noun_suppressed():
+    """'How many support tickets' against a users table must not answer
+    row_count = 500."""
+    assert try_compute_answer(
+        "How many support tickets do we have?",
+        str(SAMPLES / "users.csv"), "users.csv") is None
+
+
+def test_no_numeric_fallback_on_unknown_column():
+    """'Average customer age' with no age column must not fall back to
+    mean() of whatever numeric column happens to exist."""
+    assert try_compute_answer(
+        "What is the average age of our customers?",
+        str(SAMPLES / "users.csv"), "users.csv") is None
+
+
+def test_rank_by_numeric_aggregate():
+    """'Second-highest by revenue' ranks categories by summed value, not by
+    row frequency."""
+    block = try_compute_answer(
+        "Which product category is second-highest by revenue?",
+        str(SAMPLES / "tiktok_shop_orders.csv"), "tiktok_shop_orders.csv")
+    assert block is not None and "second_highest" in block

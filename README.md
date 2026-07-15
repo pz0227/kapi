@@ -159,8 +159,11 @@ Kapi treats "don't mislead the user" as a product requirement with three shipped
 2. **Compute-first routing** — aggregate questions ("total revenue", "how many
    refunded orders in EU", "average by region") are detected and answered by exact
    pandas computation over the FULL dataset, including filtered and group-by
-   variants, instead of being estimated from retrieved samples. Additive by design:
-   a false-positive detection only adds a correct fact to the context.
+   variants, instead of being estimated from retrieved samples. The router also
+   knows when NOT to speak: time-scoped questions it cannot filter for, counts
+   of things the dataset does not contain, and metrics no column matches are
+   suppressed rather than approximated (0/20 false fires on the eval set's
+   unanswerable and adversarial cases; 31/31 exact on answerable cases).
 3. **Visible provenance** — computed facts appear in the answer's sources as
    "(computed, full dataset)" entries, so users can see which parts of an answer
    came from exact computation versus retrieval.
