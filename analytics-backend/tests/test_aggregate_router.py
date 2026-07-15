@@ -208,3 +208,34 @@ def test_rank_by_numeric_aggregate():
         "Which product category is second-highest by revenue?",
         str(SAMPLES / "tiktok_shop_orders.csv"), "tiktok_shop_orders.csv")
     assert block is not None and "second_highest" in block
+
+
+# ── DataFrame cache behavior ─────────────────────────────────────────────────
+
+def test_df_cache_hit_and_mtime_invalidation(tmp_path):
+    """Same unchanged file parses once; touching the file invalidates."""
+    import os, time
+    from services.analytics import aggregate_router as ar
+
+    p = tmp_path / "cache_test.csv"
+    pd.DataFrame({"amount": [1.0, 2.0], "region": ["US", "EU"]}).to_csv(p, index=False)
+
+    df1 = ar._load_df(p, "cache_test.csv")
+    df2 = ar._load_df(p, "cache_test.csv")
+    assert df1 is df2  # cache hit: identical object
+
+    time.sleep(0.01)
+    pd.DataFrame({"amount": [1.0, 2.0, 3.0], "region": ["US", "EU", "US"]}).to_csv(p, index=False)
+    os.utime(p)  # ensure mtime moves even on coarse filesystems
+    df3 = ar._load_df(p, "cache_test.csv")
+    assert df3 is not df1 and len(df3) == 3  # stale entry replaced
+
+
+def test_oversized_file_skipped(tmp_path, monkeypatch):
+    """Files beyond the size ceiling are refused instead of parsed per message."""
+    from services.analytics import aggregate_router as ar
+    p = tmp_path / "big.csv"
+    pd.DataFrame({"amount": [1.0]}).to_csv(p, index=False)
+    monkeypatch.setattr(ar, "_MAX_FILE_MB", 0)
+    assert ar._load_df(p, "big.csv") is None
+    assert try_compute_answer("total amount", str(p), "big.csv") is None

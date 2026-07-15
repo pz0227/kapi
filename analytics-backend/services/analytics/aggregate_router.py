@@ -112,6 +112,50 @@ def _count_noun_matches_data(q_lower: str, filename: str, columns: list[str], df
 
 _MAX_GROUPS_SHOWN = 12  # keep the injected block compact
 
+# Full-file reads are the router's whole point, but doing one per chat message
+# is wasteful (and unacceptable on big files). Cache parsed frames keyed on
+# (path, mtime, size) so an unchanged file is read once; refuse files beyond
+# a size ceiling instead of silently making every message slow.
+_DF_CACHE: dict[tuple, "object"] = {}
+_DF_CACHE_MAX = 8
+_MAX_FILE_MB = 64
+
+
+def _load_df(path: Path, filename: str):
+    """Read the full dataset with caching. Returns None when unsupported or too big.
+
+    Cached frames must be treated as READ-ONLY by callers (filtering via
+    boolean indexing creates new frames, which is what try_compute_answer does).
+    """
+    import pandas as pd
+
+    st = path.stat()
+    if st.st_size > _MAX_FILE_MB * 1024 * 1024:
+        log.info("COMPUTE skipped: %s is %.0f MB (> %d MB ceiling)",
+                 filename, st.st_size / 1024 / 1024, _MAX_FILE_MB)
+        return None
+    key = (str(path), st.st_mtime_ns, st.st_size)
+    if key in _DF_CACHE:
+        return _DF_CACHE[key]
+
+    lower = filename.lower()
+    if lower.endswith((".csv", ".tsv")):
+        df = pd.read_csv(path, sep="\t" if lower.endswith(".tsv") else ",")
+    elif lower.endswith(".json"):
+        df = pd.read_json(path)
+    elif lower.endswith((".xlsx", ".xls")):
+        df = pd.read_excel(path)
+    else:
+        return None
+
+    # Drop stale entries for the same path, then evict oldest if still full.
+    for k in [k for k in _DF_CACHE if k[0] == str(path)]:
+        _DF_CACHE.pop(k, None)
+    while len(_DF_CACHE) >= _DF_CACHE_MAX:
+        _DF_CACHE.pop(next(iter(_DF_CACHE)))
+    _DF_CACHE[key] = df
+    return df
+
 
 def _detect_ops(question: str) -> list[str]:
     q = question.lower()
@@ -229,21 +273,13 @@ def try_compute_answer(question: str, filepath: str, filename: str) -> str | Non
             log.info("COMPUTE suppressed: time-scoped question, no date filtering support")
             return None
 
-        import pandas as pd
-
         path = Path(filepath)
         if not path.exists():
             return None
-        # Full read — this is the whole point. CSV/TSV/JSON/XLSX mirror of the
-        # upload readers, kept minimal on purpose.
-        lower = filename.lower()
-        if lower.endswith((".csv", ".tsv")):
-            df = pd.read_csv(path, sep="\t" if lower.endswith(".tsv") else ",")
-        elif lower.endswith(".json"):
-            df = pd.read_json(path)
-        elif lower.endswith((".xlsx", ".xls")):
-            df = pd.read_excel(path)
-        else:
+        # Full read via mtime-aware cache — the whole point is exactness over
+        # ALL rows, but an unchanged file should be parsed once, not per message.
+        df = _load_df(path, filename)
+        if df is None:
             return None
 
         total_rows = len(df)
