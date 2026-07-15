@@ -40,6 +40,23 @@ _AGG_PATTERNS: dict[str, list[str]] = {
 
 _GROUPBY_PATTERNS = [r"\bby\b", r"\bper\b", r"\bfor each\b", r"\bbreakdown\b", r"分别", r"各(个)?", r"按"]
 
+# Category-level questions: "which country has the most users", "most common
+# referral source", "second most frequent event type", "fewest users".
+_TOP_LABEL_PATTERNS = [
+    r"\bwhich\b.{0,60}\b(most|highest|largest|top|fewest|least|lowest)\b",
+    r"\bmost (common|frequent|popular)\b",
+    r"\b(second|2nd)[- ]most\b",
+    r"最(常见|多|少|热门)",
+]
+_LEAST_PATTERNS = [r"\bfewest\b", r"\bleast\b", r"\blowest\b", r"最少"]
+_SECOND_PATTERNS = [r"\b(second|2nd)[- ](most|largest|biggest|highest)\b", r"第二"]
+
+# Share/percentage questions: "what percentage of users are on the pro plan".
+_SHARE_PATTERNS = [r"\bpercentage\b", r"\bpercent\b", r"\bshare of\b", r"\bproportion\b", r"占比", r"百分比", r"比例"]
+
+# Distinct-count questions: "how many distinct countries".
+_NUNIQUE_PATTERNS = [r"\bdistinct\b", r"\bunique\b", r"\bhow many different\b", r"多少种", r"几种"]
+
 _MAX_GROUPS_SHOWN = 12  # keep the injected block compact
 
 
@@ -60,16 +77,34 @@ def _detect_groupby(question: str) -> bool:
     return any(re.search(p, q) for p in _GROUPBY_PATTERNS)
 
 
+def _word_variants(w: str) -> set[str]:
+    """Simple singular/plural variants: country -> countries, event -> events."""
+    out = {w, w + "s", w + "es"}
+    if w.endswith("y"):
+        out.add(w[:-1] + "ies")
+    return out
+
+
 def _match_columns(question: str, columns: list[str]) -> list[str]:
-    """Columns whose name (or snake_case words) appear in the question."""
+    """Columns whose name (or snake_case words, incl. plural forms) appear in the question."""
     q = question.lower()
     hits = []
     for col in columns:
         col_l = col.lower()
         words = [w for w in re.split(r"[_\s]+", col_l) if len(w) >= 3]
-        if col_l in q or any(w in q for w in words):
+        variants = set().union(*(_word_variants(w) for w in words)) if words else set()
+        if col_l in q or any(v in q for v in variants):
             hits.append(col)
     return hits
+
+
+# English function words that collide with short categorical codes ('IN' the
+# country vs 'in' the preposition). Values equal to these are never treated
+# as filters.
+_FILTER_STOPWORDS = {
+    "in", "on", "at", "to", "of", "or", "and", "the", "a", "an", "is", "it",
+    "as", "by", "be", "if", "no", "so", "do", "not", "all", "any", "per", "for",
+}
 
 
 def _match_filters(question: str, df, cat_cols: list[str]) -> dict[str, list]:
@@ -88,8 +123,25 @@ def _match_filters(question: str, df, cat_cols: list[str]) -> dict[str, list]:
         try:
             if df[col].nunique() > 50:
                 continue
-            values = [v for v in df[col].dropna().unique() if isinstance(v, str) and len(v) >= 2]
-            hit = [v for v in values if re.search(rf"(?<![a-z0-9]){re.escape(v.lower())}(?![a-z0-9])", q)]
+            # Words of the column's own name never count as value mentions:
+            # in "most common referral source", 'referral' names the column,
+            # not the value 'referral' inside it.
+            col_words = set().union(*(_word_variants(w) for w in re.split(r"[_\s]+", col.lower()) if w))
+            values = [
+                v for v in df[col].dropna().unique()
+                if isinstance(v, str) and len(v) >= 2
+                and v.lower() not in _FILTER_STOPWORDS
+                and v.lower() not in col_words
+            ]
+            hit = []
+            for v in values:
+                v_l = v.lower()
+                # Exact value match, or any sub-token of a compound value:
+                # 'mobile_ios' matches a question that says 'iOS'.
+                tokens = [t for t in re.split(r"[_\s\-]+", v_l) if len(t) >= 3 and t not in _FILTER_STOPWORDS]
+                patterns = [v_l] + tokens
+                if any(re.search(rf"(?<![a-z0-9]){re.escape(p)}(?![a-z0-9])", q) for p in patterns):
+                    hit.append(v)
             if hit:
                 filters[col] = hit
         except Exception:
@@ -104,9 +156,13 @@ def try_compute_answer(question: str, filepath: str, filename: str) -> str | Non
     Never raises.
     """
     try:
+        q_lower = question.lower()
         ops = _detect_ops(question)
         wants_groupby = _detect_groupby(question)
-        if not ops and not wants_groupby:
+        wants_top_label = any(re.search(p, q_lower) for p in _TOP_LABEL_PATTERNS)
+        wants_share = any(re.search(p, q_lower) for p in _SHARE_PATTERNS)
+        wants_nunique = any(re.search(p, q_lower) for p in _NUNIQUE_PATTERNS)
+        if not ops and not wants_groupby and not wants_top_label and not wants_share and not wants_nunique:
             return None
 
         import pandas as pd
@@ -138,6 +194,7 @@ def try_compute_answer(question: str, filepath: str, filename: str) -> str | Non
         # before computing. Multiple values in one column OR together; values
         # across different columns AND together.
         filters = _match_filters(question, df, cat_cols)
+        df_full = df  # pre-filter frame; category rankings must not be circular
         filter_desc = ""
         if filters:
             for col, vals in filters.items():
@@ -149,12 +206,45 @@ def try_compute_answer(question: str, filepath: str, filename: str) -> str | Non
 
         lines: list[str] = []
 
+        # Distinct-value counts: "how many distinct countries" → nunique, and
+        # suppress the plain row count which would otherwise be misleading.
+        if wants_nunique:
+            nunique_cols = [c for c in mentioned] or cat_cols[:2]
+            for col in nunique_cols[:2]:
+                lines.append(f"distinct_count({col}) = {int(df[col].nunique())}")
+
         # Row count is cheap and almost always useful for aggregate questions
-        if "count" in ops or not ops:
+        if ("count" in ops or not ops) and not wants_nunique:
             if filters:
                 lines.append(f"row_count{filter_desc} = {len(df)} (of {total_rows} total)")
             else:
                 lines.append(f"row_count = {total_rows}")
+
+        # Share/percentage: fraction of rows matching the mentioned values.
+        if wants_share and filters:
+            share = 100.0 * len(df) / total_rows if total_rows else 0.0
+            lines.append(f"share{filter_desc} = {round(share, 1)}% ({len(df)} of {total_rows} rows)")
+
+        # Category-level top/least/second: "which country has the most users".
+        if wants_top_label:
+            is_least = any(re.search(p, q_lower) for p in _LEAST_PATTERNS)
+            is_second = any(re.search(p, q_lower) for p in _SECOND_PATTERNS)
+            label_cols = [c for c in mentioned if c in cat_cols and df[c].nunique() <= 50] or \
+                         [c for c in cat_cols if df[c].nunique() <= 50][:1]
+            for col in label_cols[:2]:
+                # Ranking a column we just filtered BY would be circular
+                # ("most common referral_source among rows where
+                # referral_source == X" is always X) — rank on the full frame.
+                base = df_full if col in filters else df
+                vc = base[col].value_counts()
+                if vc.empty:
+                    continue
+                if is_second and len(vc) >= 2:
+                    lines.append(f"second_most_common({col}) = '{vc.index[1]}' ({int(vc.iloc[1])} rows)")
+                elif is_least:
+                    lines.append(f"least_common({col}) = '{vc.index[-1]}' ({int(vc.iloc[-1])} rows)")
+                else:
+                    lines.append(f"most_common({col}) = '{vc.index[0]}' ({int(vc.iloc[0])} rows)")
 
         for col in target_numeric[:2]:
             series = df[col].dropna()
