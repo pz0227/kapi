@@ -376,7 +376,11 @@ async def _index_dataset(dataset_id: str, filepath: str, name: str, original_nam
     """Background task: build FAISS index and mark dataset as indexed."""
     try:
         df = _read_file(Path(filepath), original_name)
-        count = build_index(dataset_id, df, name)
+        # Pass the TRUE row count so the index header can disclose truncation:
+        # df is a capped read (5000 rows) and the chunker caps again (200) —
+        # the model should know how much of the data its answers draw from.
+        true_rows = _count_rows(Path(filepath), original_name) or len(df)
+        count = build_index(dataset_id, df, name, total_rows=true_rows)
 
         result = await db.execute(select(Dataset).where(Dataset.id == dataset_id))
         ds = result.scalar_one_or_none()
@@ -397,7 +401,13 @@ async def list_datasets(
         .where(Dataset.org_id == user.org_id)
         .order_by(Dataset.uploaded_at.desc())
     )
-    return [DatasetOut.model_validate(ds) for ds in result.scalars().all()]
+    out = []
+    for ds in result.scalars().all():
+        item = DatasetOut.model_validate(ds)
+        # Disclose RAG coverage: "indexed 200 of 8,431 rows" beats implying all.
+        item.indexed_rows = min(ds.row_count, settings.index_max_rows) if ds.indexed else 0
+        out.append(item)
+    return out
 
 
 @router.get("/{dataset_id}/preview", response_model=DatasetPreview)

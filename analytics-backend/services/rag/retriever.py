@@ -4,12 +4,16 @@ deduplicates results, and formats retrieved context for injection.
 """
 from __future__ import annotations
 
+import logging
+import time
+
 from .embedder import embed_query
 from .faiss_index import get_index, Chunk
 
 from core.config import get_settings
 
 settings = get_settings()
+log = logging.getLogger("kapi.timing")
 
 
 def retrieve(
@@ -32,13 +36,23 @@ def retrieve(
     if not dataset_ids:
         return []
 
+    # Split embed vs. search timing — the two candidate bottlenecks inside
+    # retrieval. One debug line per call; aggregate later via `grep TIMING`.
+    _t0 = time.perf_counter()
     query_vec = embed_query(query)  # (1, D)
+    _t_embed = time.perf_counter() - _t0
 
+    _t1 = time.perf_counter()
     all_results: list[tuple[Chunk, float]] = []
     for did in dataset_ids:
         idx = get_index(did)
         results = idx.search(query_vec, k=top_k)
         all_results.extend(results)
+    _t_search = time.perf_counter() - _t1
+    log.debug(
+        "TIMING retrieve embed=%.3fs search=%.3fs datasets=%d",
+        _t_embed, _t_search, len(dataset_ids),
+    )
 
     # Sort by score descending and take top_k across all datasets
     all_results.sort(key=lambda x: x[1], reverse=True)

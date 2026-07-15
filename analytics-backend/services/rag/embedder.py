@@ -34,9 +34,25 @@ def embed_texts(texts: list[str]) -> np.ndarray:
     return np.array(embeddings, dtype=np.float32)
 
 
-def embed_query(query: str) -> np.ndarray:
-    """Embed a single query string. Returns (1, D) float32 array."""
+@lru_cache(maxsize=256)
+def _embed_query_cached(query: str) -> np.ndarray:
+    """Cached embedding for a single query string.
+
+    Chat sessions routinely re-embed identical queries (retries, streaming +
+    non-streaming paths, eval reruns). Model inference for a short query is
+    ~10-50ms warm but the cache makes repeats ~free and, more importantly,
+    removes embedding entirely from the critical path for repeated eval runs.
+    Cache is keyed on the exact query string; 256 entries ≈ a few hundred KB.
+    """
     return embed_texts([query])
+
+
+def embed_query(query: str) -> np.ndarray:
+    """Embed a single query string. Returns (1, D) float32 array.
+
+    Returns a copy so callers can't mutate the cached array in place.
+    """
+    return _embed_query_cached(query).copy()
 
 
 def chunk_text(text: str, chunk_size: int | None = None, overlap: int | None = None) -> list[str]:
@@ -64,20 +80,37 @@ def chunk_text(text: str, chunk_size: int | None = None, overlap: int | None = N
     return chunks
 
 
-def dataframe_to_text_chunks(df, dataset_name: str, max_rows: int = 200) -> list[str]:
+def dataframe_to_text_chunks(
+    df, dataset_name: str, max_rows: int | None = None, total_rows: int | None = None
+) -> list[str]:
     """
     Convert a pandas DataFrame to a list of text chunks suitable for indexing.
     Each chunk represents a slice of rows with header.
+
+    `total_rows` is the TRUE dataset size (the df passed in may itself already
+    be a truncated read). When we index fewer rows than the dataset holds, the
+    header says so explicitly — so the model can caveat its answers instead of
+    presenting a partial view as the whole dataset. Honest limitation beats
+    silent truncation (Phase 1; the real fix is the Phase-2 compute-first router).
     """
     import pandas as pd
 
+    max_rows = max_rows if max_rows is not None else settings.index_max_rows
     rows = min(len(df), max_rows)
     df_sample = df.head(rows)
 
     # Column summary header
     dtypes = df.dtypes.to_dict()
     type_summary = ", ".join(f"{col}({str(dt)})" for col, dt in dtypes.items())
-    header = f"Dataset: {dataset_name} | Columns: {type_summary} | Rows shown: {rows}"
+    true_total = total_rows if total_rows is not None else len(df)
+    if true_total > rows:
+        coverage_note = (
+            f" | NOTE: only the first {rows} of {true_total} rows are indexed for retrieval — "
+            f"treat any aggregate/total computed from retrieved rows as PARTIAL and say so"
+        )
+    else:
+        coverage_note = ""
+    header = f"Dataset: {dataset_name} | Columns: {type_summary} | Rows shown: {rows}{coverage_note}"
 
     # Convert to CSV-like text in slices of 20 rows
     chunks = [header]
