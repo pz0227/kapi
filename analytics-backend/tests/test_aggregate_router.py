@@ -123,3 +123,50 @@ def test_corrupt_csv_returns_none(tmp_path):
     p.write_bytes(b"\x00\xff\x00\xff completely broken")
     result = try_compute_answer("total rows count", str(p), "bad.csv")
     assert result is None or isinstance(result, str)  # must not raise, ever
+
+
+# ── Regression tests: four bugs found by the offline eval (2026-07-15) ───────
+# Each of these failed against data/samples before the fix. Kept as living
+# documentation of the eval-driven loop: measure, fix, re-measure.
+
+SAMPLES = Path(__file__).parent.parent / "data" / "samples"
+
+
+def test_column_name_is_not_a_value_filter():
+    """'referral source' names a COLUMN; the value 'referral' inside it must
+    not become a circular filter (bug: answer was trivially 'referral')."""
+    block = try_compute_answer(
+        "What is the most common referral source for users?",
+        str(SAMPLES / "users.csv"), "users.csv")
+    assert block is not None
+    assert "most_common(referral_source) = 'organic'" in block
+
+
+def test_stopword_country_codes_do_not_filter():
+    """Country code 'IN' must not match the preposition 'in' (bug: US share
+    silently became US+India share)."""
+    block = try_compute_answer(
+        "What percentage of users are based in the US?",
+        str(SAMPLES / "users.csv"), "users.csv")
+    assert block is not None
+    assert "country = US" in block and "IN" not in block
+
+
+def test_plural_column_matching():
+    """'distinct countries' must reach the 'country' column (bug: singular
+    column name never matched the plural word)."""
+    block = try_compute_answer(
+        "How many distinct countries are represented in the user base?",
+        str(SAMPLES / "users.csv"), "users.csv")
+    assert block is not None
+    assert "distinct_count(country) = 7" in block
+
+
+def test_value_subtoken_matching():
+    """'iOS and Android' must match values 'mobile_ios'/'mobile_android'
+    (bug: compound value names never matched their sub-tokens)."""
+    block = try_compute_answer(
+        "What share of events come from mobile platforms (iOS and Android combined)?",
+        str(SAMPLES / "events.csv"), "events.csv")
+    assert block is not None
+    assert "share where platform in" in block
