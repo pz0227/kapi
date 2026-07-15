@@ -172,6 +172,28 @@ The router ships with a pytest suite (`analytics-backend/tests/`) covering inten
 detection (English + Chinese), correctness against pandas ground truth beyond the
 index cap, filtered and grouped aggregates, and fail-silent guarantees.
 
+## Current evaluation results
+
+Two complementary suites score the deterministic answer layer (no LLM needed):
+
+| Suite | What it measures | Result |
+|---|---|---|
+| Dev set (31 answerable + 20 unanswerable/adversarial) | The eval-driven tuning loop | 31/31 exact · 0/20 false fires |
+| Held-out set (16 answerable + 8 traps, written after tuning) | Generalization, first run recorded as-is | 16/16 exact · 0/8 false fires |
+
+Honest caveats, on purpose: the dev-set score is measured on the same cases the
+router was tuned against, and the held-out set shares an author with the router,
+so distribution bias exists. The next rigor step is an externally sourced
+question set. The full LLM pipeline (retrieval + generation) is scored
+separately by the 51-case suite in `services/eval/` (see METHODOLOGY.md).
+
+```bash
+# reproduce both numbers
+.venv/bin/python -m services.eval.router_offline_eval
+.venv/bin/python -m services.eval.holdout_eval
+.venv/bin/python -m pytest analytics-backend/tests/ -q   # 21 tests
+```
+
 ## Configuring an LLM provider
 
 Kapi never ships keys. Provide **one** of the following:

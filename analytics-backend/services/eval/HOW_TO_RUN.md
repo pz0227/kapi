@@ -22,6 +22,20 @@ cd analytics-backend
 
 ---
 
+---
+
+## 0.5 Offline router evals (no LLM required)
+
+Before the full pipeline eval, two deterministic suites run with no provider:
+
+```bash
+python -m services.eval.router_offline_eval   # dev set: 31 answerable + 20 traps
+python -m services.eval.holdout_eval          # held-out: 16 answerable + 8 traps
+```
+
+These score the compute-first router alone. Every case it answers exactly is a
+case removed from hallucination surface entirely.
+
 ## 1. Health check (always run this first)
 
 ```bash
