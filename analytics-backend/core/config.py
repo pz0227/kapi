@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     chunk_size: int = 512
     chunk_overlap: int = 64
     retrieval_top_k: int = 6
+    # Max dataset rows converted into retrieval chunks. Rows beyond this are
+    # not searchable via RAG. Surfaced to the UI as `indexed_rows` so
+    # truncation is a disclosed limitation instead of a silent one.
+    index_max_rows: int = 200
 
     # Provider defaults
     default_provider: str = "anthropic"

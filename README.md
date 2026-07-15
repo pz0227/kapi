@@ -122,6 +122,30 @@ python main.py                    # FastAPI on http://127.0.0.1:18792
 
 Then open the dashboard URL printed by `kapi dashboard`.
 
+### macOS / Linux — manual setup
+
+The desktop launcher is Windows-only for now, but the full stack (gateway + analytics
+backend + dashboard) runs anywhere Node and Python do:
+
+```bash
+# 1. Gateway
+npm install -g kapi
+kapi daemon start                  # gateway on http://127.0.0.1:18789
+
+# 2. Analytics backend (this repo)
+git clone https://github.com/pz0227/kapi.git
+cd kapi/analytics-backend
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp ../.env.example .env            # optional: add an API key, or configure in-app
+python main.py                     # FastAPI on http://127.0.0.1:18792
+```
+
+> First AI query normally pays a ~45s model-load cost; the backend pre-warms the
+> embedder in the background at startup, so give it ~30s after boot and the first
+> query returns warm. Latency is logged per stage — `grep TIMING` the backend logs
+> to see where time goes (embed / search / context / first token).
+
 ---
 
 ## Configuring an LLM provider

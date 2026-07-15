@@ -41,6 +41,7 @@ from models.schemas import (
     ChatRequest, ChatSessionCreate, ChatSessionOut, ChatMessageOut, Source
 )
 from core.auth import get_current_user, CurrentUser
+from core.timing import StageTimer
 from services.providers import get_provider
 from services.providers.registry import get_fallback_provider
 from services.providers.base import Message
@@ -274,9 +275,14 @@ async def chat(
     # Determine datasets to use
     dataset_ids = body.dataset_ids or session.dataset_ids or []
 
+    # Per-stage latency instrumentation (grep "TIMING" in logs for p50/p90 analysis)
+    timer = StageTimer("chat")
+
     # Retrieve relevant context
-    sources = retrieve(body.message, dataset_ids, top_k=settings.retrieval_top_k)
-    context_str = format_context(sources)
+    with timer.stage("retrieve"):
+        sources = retrieve(body.message, dataset_ids, top_k=settings.retrieval_top_k)
+    with timer.stage("context_build"):
+        context_str = format_context(sources)
 
     # Build conversation history
     history_result = await db.execute(
@@ -303,12 +309,13 @@ async def chat(
     model_name = pc.model if pc else getattr(provider, "model", "unknown")
     log.info("[chat] provider=%s model=%s dataset_ids=%s", provider_name, model_name, dataset_ids)
     try:
-        result = await provider.complete(
-            messages=messages,
-            system=ANALYST_SYSTEM,
-            max_tokens=2048,
-            temperature=0.2,
-        )
+        with timer.stage("llm_complete"):
+            result = await provider.complete(
+                messages=messages,
+                system=ANALYST_SYSTEM,
+                max_tokens=2048,
+                temperature=0.2,
+            )
     except Exception as exc:
         log.error("[chat] Provider completion failed (%s/%s): %s", provider_name, model_name, exc)
         # Map common SDK errors to helpful messages
@@ -341,7 +348,9 @@ async def chat(
         raise HTTPException(502, f"AI provider error ({provider_name}): {exc}")
 
     # Compute groundedness
-    g_score = groundedness_score(result.text, sources)
+    with timer.stage("groundedness"):
+        g_score = groundedness_score(result.text, sources)
+    timer.log()
 
     # Save user message
     user_msg = ChatMessage(
@@ -409,8 +418,14 @@ async def chat_stream(
     )
 
     dataset_ids = body.dataset_ids or session.dataset_ids or []
-    sources = retrieve(body.message, dataset_ids)
-    context_str = format_context(sources)
+
+    # Per-stage latency instrumentation. For streaming, time-to-first-token is
+    # THE user-perceived latency metric — it's marked inside the generator.
+    timer = StageTimer("chat_stream")
+    with timer.stage("retrieve"):
+        sources = retrieve(body.message, dataset_ids)
+    with timer.stage("context_build"):
+        context_str = format_context(sources)
 
     history_result = await db.execute(
         select(ChatMessage)
@@ -430,10 +445,16 @@ async def chat_stream(
 
     async def event_generator() -> AsyncIterator[str]:
         full_text = ""
+        first_token_seen = False
         try:
             async for chunk in provider.stream(messages=messages, system=ANALYST_SYSTEM):
+                if not first_token_seen:
+                    first_token_seen = True
+                    timer.mark("llm_first_token")
                 full_text += chunk
                 yield f"data: {chunk}\n\n"
+            timer.mark("stream_done")
+            timer.log()
         finally:
             # Persist messages after stream
             user_msg = ChatMessage(

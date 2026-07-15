@@ -53,14 +53,17 @@ class KapiIndex:
         with open(self._meta_path, "rb") as f:
             self._chunks = pickle.load(f)
 
-    def build(self, df, dataset_name: str) -> int:
+    def build(self, df, dataset_name: str, total_rows: int | None = None) -> int:
         """
         Build and persist a FAISS index from a DataFrame.
         Returns number of chunks indexed.
+
+        `total_rows`: true dataset size, forwarded to the chunker so the index
+        header can disclose truncation (the df itself may be a capped read).
         """
         import faiss  # type: ignore
 
-        text_chunks = dataframe_to_text_chunks(df, dataset_name)
+        text_chunks = dataframe_to_text_chunks(df, dataset_name, total_rows=total_rows)
         if not text_chunks:
             return 0
 
@@ -126,9 +129,9 @@ def get_index(dataset_id: str) -> KapiIndex:
     return _INDICES[dataset_id]
 
 
-def build_index(dataset_id: str, df, dataset_name: str) -> int:
+def build_index(dataset_id: str, df, dataset_name: str, total_rows: int | None = None) -> int:
     idx = KapiIndex(dataset_id)
-    count = idx.build(df, dataset_name)
+    count = idx.build(df, dataset_name, total_rows=total_rows)
     _INDICES[dataset_id] = idx
     return count
 
