@@ -46,6 +46,12 @@ _MAX_GROUPS_SHOWN = 12  # keep the injected block compact
 def _detect_ops(question: str) -> list[str]:
     q = question.lower()
     ops = [op for op, pats in _AGG_PATTERNS.items() if any(re.search(p, q) for p in pats)]
+    # Homonym guard: "what does X mean" / "the meaning of X" asks for a
+    # definition, not an average. Only drop the op when no other averaging
+    # vocabulary is present.
+    if "mean" in ops and not re.search(r"\baverage\b|\bavg\b|平均", q):
+        if re.search(r"what (does|do|did|is)\b.{0,60}\bmean\b|\bmeaning\b", q):
+            ops.remove("mean")
     return ops
 
 
@@ -64,6 +70,31 @@ def _match_columns(question: str, columns: list[str]) -> list[str]:
         if col_l in q or any(w in q for w in words):
             hits.append(col)
     return hits
+
+
+def _match_filters(question: str, df, cat_cols: list[str]) -> dict[str, list]:
+    """
+    Detect categorical VALUES mentioned in the question — 'total revenue in EU',
+    'how many refunded orders' — and return {column: [matched values]}.
+
+    Only low-cardinality columns are scanned (a value list is only meaningful
+    as a filter vocabulary when it's small), and only string values of length
+    >= 2 are matched, on word boundaries, to keep false positives rare. A false
+    positive is still harmless by design: the block is additive context.
+    """
+    q = question.lower()
+    filters: dict[str, list] = {}
+    for col in cat_cols:
+        try:
+            if df[col].nunique() > 50:
+                continue
+            values = [v for v in df[col].dropna().unique() if isinstance(v, str) and len(v) >= 2]
+            hit = [v for v in values if re.search(rf"(?<![a-z0-9]){re.escape(v.lower())}(?![a-z0-9])", q)]
+            if hit:
+                filters[col] = hit
+        except Exception:
+            continue
+    return filters
 
 
 def try_compute_answer(question: str, filepath: str, filename: str) -> str | None:
@@ -103,11 +134,27 @@ def try_compute_answer(question: str, filepath: str, filename: str) -> str | Non
         target_numeric = [c for c in mentioned if c in numeric_cols] or numeric_cols[:2]
         group_col = next((c for c in mentioned if c in cat_cols and df[c].nunique() <= 50), None)
 
+        # Filtered aggregates: "total revenue in EU" applies region == "EU"
+        # before computing. Multiple values in one column OR together; values
+        # across different columns AND together.
+        filters = _match_filters(question, df, cat_cols)
+        filter_desc = ""
+        if filters:
+            for col, vals in filters.items():
+                df = df[df[col].isin(vals)]
+            filter_desc = " where " + " and ".join(
+                f"{col} in {vals}" if len(vals) > 1 else f"{col} = {vals[0]}"
+                for col, vals in filters.items()
+            )
+
         lines: list[str] = []
 
         # Row count is cheap and almost always useful for aggregate questions
         if "count" in ops or not ops:
-            lines.append(f"row_count = {total_rows}")
+            if filters:
+                lines.append(f"row_count{filter_desc} = {len(df)} (of {total_rows} total)")
+            else:
+                lines.append(f"row_count = {total_rows}")
 
         for col in target_numeric[:2]:
             series = df[col].dropna()
@@ -118,7 +165,7 @@ def try_compute_answer(question: str, filepath: str, filename: str) -> str | Non
                     continue
                 try:
                     val = getattr(series, op)()
-                    lines.append(f"{op}({col}) = {round(float(val), 4)}")
+                    lines.append(f"{op}({col}){filter_desc} = {round(float(val), 4)}")
                 except Exception:
                     continue
 

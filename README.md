@@ -148,6 +148,27 @@ python main.py                     # FastAPI on http://127.0.0.1:18792
 
 ---
 
+## How answers stay honest
+
+Kapi treats "don't mislead the user" as a product requirement with three shipped layers:
+
+1. **Disclosed coverage** — retrieval indexes the first 200 rows of a dataset
+   (configurable). Both the UI (`indexed_rows`) and the model's own context header
+   state exactly how many rows answers draw from, so partial coverage is never
+   silently presented as complete.
+2. **Compute-first routing** — aggregate questions ("total revenue", "how many
+   refunded orders in EU", "average by region") are detected and answered by exact
+   pandas computation over the FULL dataset, including filtered and group-by
+   variants, instead of being estimated from retrieved samples. Additive by design:
+   a false-positive detection only adds a correct fact to the context.
+3. **Visible provenance** — computed facts appear in the answer's sources as
+   "(computed, full dataset)" entries, so users can see which parts of an answer
+   came from exact computation versus retrieval.
+
+The router ships with a pytest suite (`analytics-backend/tests/`) covering intent
+detection (English + Chinese), correctness against pandas ground truth beyond the
+index cap, filtered and grouped aggregates, and fail-silent guarantees.
+
 ## Configuring an LLM provider
 
 Kapi never ships keys. Provide **one** of the following:
