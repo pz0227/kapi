@@ -291,10 +291,20 @@ async def chat(
     if dataset_ids:
         with timer.stage("compute_first"):
             ds_result = await db.execute(select(Dataset).where(Dataset.id.in_(dataset_ids)))
-            compute_blocks = [
-                b for ds in ds_result.scalars().all()
-                if (b := try_compute_answer(body.message, ds.filepath, ds.filename))
-            ]
+            compute_blocks = []
+            for ds in ds_result.scalars().all():
+                b = try_compute_answer(body.message, ds.filepath, ds.filename)
+                if b:
+                    compute_blocks.append(b)
+                    # Surface computed facts as a visible source, not just
+                    # hidden prompt context: the user should SEE that this
+                    # answer drew on exact full-dataset computation.
+                    sources.append({
+                        "dataset_id": ds.id,
+                        "dataset_name": f"{ds.name} (computed, full dataset)",
+                        "chunk_text": b,
+                        "score": 1.0,
+                    })
         if compute_blocks:
             context_str = "\n\n".join(compute_blocks) + (("\n\n" + context_str) if context_str else "")
 
@@ -445,10 +455,20 @@ async def chat_stream(
     if dataset_ids:
         with timer.stage("compute_first"):
             ds_result = await db.execute(select(Dataset).where(Dataset.id.in_(dataset_ids)))
-            compute_blocks = [
-                b for ds in ds_result.scalars().all()
-                if (b := try_compute_answer(body.message, ds.filepath, ds.filename))
-            ]
+            compute_blocks = []
+            for ds in ds_result.scalars().all():
+                b = try_compute_answer(body.message, ds.filepath, ds.filename)
+                if b:
+                    compute_blocks.append(b)
+                    # Surface computed facts as a visible source, not just
+                    # hidden prompt context: the user should SEE that this
+                    # answer drew on exact full-dataset computation.
+                    sources.append({
+                        "dataset_id": ds.id,
+                        "dataset_name": f"{ds.name} (computed, full dataset)",
+                        "chunk_text": b,
+                        "score": 1.0,
+                    })
         if compute_blocks:
             context_str = "\n\n".join(compute_blocks) + (("\n\n" + context_str) if context_str else "")
 
