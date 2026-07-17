@@ -23,6 +23,7 @@ The dashboard UI patch under `patches/control-ui/assets/kapi_session_menu.js`
 calls these endpoints from a right-click context menu on each session
 row. See README troubleshooting for details.
 """
+import json
 import logging
 import uuid
 from datetime import datetime
@@ -46,6 +47,7 @@ from services.providers import get_provider
 from services.providers.registry import get_fallback_provider
 from services.providers.base import Message
 from services.rag import retrieve, format_context, groundedness_score
+from services.rag.numeric_grounding import numeric_groundedness
 from services.analytics.aggregate_router import try_compute_answer
 from services.analytics import compute_executive_summary, compute_kpis, compute_funnel, compute_retention, compute_feature_adoption, auto_detect_funnel
 from api.routes.providers import update_provider_error
@@ -371,9 +373,18 @@ async def chat(
             )
         raise HTTPException(502, f"AI provider error ({provider_name}): {exc}")
 
-    # Compute groundedness
+    # Compute groundedness — lexical (are the words supported?) plus numeric
+    # (are the NUMBERS supported?). For a data agent the numeric signal is the
+    # one that catches the dangerous failure: a confident, fabricated figure.
     with timer.stage("groundedness"):
         g_score = groundedness_score(result.text, sources)
+        grounding_text = " ".join(s["chunk_text"] for s in sources)
+        num_grounding = numeric_groundedness(result.text, grounding_text)
+    if num_grounding["ungrounded"]:
+        log.warning(
+            "[chat] ungrounded numbers in answer (possible fabrication): %s",
+            num_grounding["ungrounded"],
+        )
     timer.log()
 
     # Save user message
@@ -417,6 +428,7 @@ async def chat(
         "content": result.text,
         "sources": source_dicts,
         "groundedness_score": g_score,
+        "numeric_groundedness": num_grounding,
         "model": result.model,
         "provider": result.provider,
         "tokens": {"input": result.input_tokens, "output": result.output_tokens},
@@ -520,6 +532,13 @@ async def chat_stream(
             db.add(asst_msg)
             session.updated_at = datetime.utcnow()
             await db.commit()
+            # Flag fabricated numbers even on the streamed path (post-hoc):
+            # the trust signal matters most exactly when we auto-computed facts.
+            grounding_text = " ".join(s["chunk_text"] for s in sources)
+            ng = numeric_groundedness(full_text, grounding_text)
+            if ng["ungrounded"]:
+                log.warning("[chat_stream] ungrounded numbers in answer: %s", ng["ungrounded"])
+            yield f"data: {json.dumps({'numeric_groundedness': ng})}\n\n"
             yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

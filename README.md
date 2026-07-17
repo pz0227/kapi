@@ -180,6 +180,7 @@ Two complementary suites score the deterministic answer layer (no LLM needed):
 |---|---|---|
 | Dev set (31 answerable + 20 unanswerable/adversarial) | The eval-driven tuning loop | 31/31 exact · 0/20 false fires |
 | Held-out set (16 answerable + 8 traps, written after tuning) | Generalization, first run recorded as-is | 16/16 exact · 0/8 false fires |
+| Numeric grounding (4 faithful + 4 fabricated answers) | Does the wrong-number detector work? | 4/4 fabrications caught · 0 false positives |
 
 Honest caveats, on purpose: the dev-set score is measured on the same cases the
 router was tuned against, and the held-out set shares an author with the router,
@@ -187,10 +188,19 @@ so distribution bias exists. The next rigor step is an externally sourced
 question set. The full LLM pipeline (retrieval + generation) is scored
 separately by the 51-case suite in `services/eval/` (see METHODOLOGY.md).
 
+**Numeric groundedness**: beyond the word-overlap groundedness score, every
+answer's stated numbers are checked against the grounding context (retrieved
+sources + full-dataset computed values), with precision-aware matching so a
+faithful rounding like "$1.2M" for 1,234,567 counts as grounded while an
+invented figure is flagged. For a data agent, a confident wrong number is the
+highest-severity failure, so it gets its own metric instead of hiding inside a
+lexical score.
+
 ```bash
 # reproduce both numbers
 .venv/bin/python -m services.eval.router_offline_eval
 .venv/bin/python -m services.eval.holdout_eval
+.venv/bin/python -m services.eval.numeric_grounding_eval
 .venv/bin/python -m pytest analytics-backend/tests/ -q   # 21 tests
 ```
 
