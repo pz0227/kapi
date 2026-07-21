@@ -1,10 +1,21 @@
 """Tests for provider error classification — the most common user-facing error
 (bad/restricted/rate-limited API key) mapped to an actionable message."""
 import sys
+import importlib.util
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from services.providers.error_map import classify_provider_error
+# Import error_map DIRECTLY from its file, bypassing services/providers/__init__
+# (which eagerly loads every provider SDK, e.g. anthropic, not in the light CI
+# deps). This also proves error_map is genuinely standalone: pure stdlib, no
+# provider imports. The module must be registered in sys.modules BEFORE
+# exec_module, because @dataclass resolves annotations via
+# sys.modules[cls.__module__] and would otherwise fail on a NoneType lookup.
+_PATH = Path(__file__).resolve().parents[1] / "services" / "providers" / "error_map.py"
+_spec = importlib.util.spec_from_file_location("kapi_error_map", _PATH)
+error_map = importlib.util.module_from_spec(_spec)
+sys.modules["kapi_error_map"] = error_map
+_spec.loader.exec_module(error_map)
+classify_provider_error = error_map.classify_provider_error
 
 
 def test_invalid_key_maps_to_401_and_persists():
