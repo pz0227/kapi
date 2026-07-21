@@ -48,6 +48,7 @@ from services.providers.base import Message
 from services.rag import retrieve, format_context, groundedness_score
 from services.rag.numeric_grounding import numeric_groundedness
 from services.analytics.aggregate_router import try_compute_answer
+from services.providers.error_map import classify_provider_error
 from api.routes.providers import update_provider_error
 
 log = logging.getLogger(__name__)
@@ -342,34 +343,11 @@ async def chat(
             )
     except Exception as exc:
         log.error("[chat] Provider completion failed (%s/%s): %s", provider_name, model_name, exc)
-        # Map common SDK errors to helpful messages
-        err_str = str(exc).lower()
-        if "invalid api key" in err_str or "authentication" in err_str or "401" in err_str:
-            if pc:
-                await update_provider_error(db, pc.id, f"Auth failed: {exc}")
-            raise HTTPException(
-                401,
-                f"Provider authentication failed ({provider_name}). "
-                "Go to Settings and update your API key, or switch to a different provider."
-            )
-        if "missing scopes" in err_str or "insufficient permissions" in err_str:
-            raise HTTPException(
-                403,
-                f"API key lacks required permissions ({provider_name}). "
-                "Your API key may be restricted — GPT-5.4 requires api.responses.write scope. "
-                "Create a new unrestricted key at platform.openai.com, or try a different model."
-            )
-        if "rate limit" in err_str or "429" in err_str:
-            raise HTTPException(429, f"Rate limit hit ({provider_name}). Wait a moment and try again.")
-        if "session" in err_str or "browser" in err_str:
-            if pc:
-                await update_provider_error(db, pc.id, f"Session error: {exc}")
-            raise HTTPException(
-                503,
-                f"Browser session error: {exc}. "
-                "Go to Settings → Browser Login to re-authenticate."
-            )
-        raise HTTPException(502, f"AI provider error ({provider_name}): {exc}")
+        # Shared classifier maps the raw SDK error to a user-actionable message.
+        mapped = classify_provider_error(exc, provider_name)
+        if mapped.persist_error and pc:
+            await update_provider_error(db, pc.id, f"{mapped.kind}: {exc}")
+        raise HTTPException(mapped.status, mapped.message)
 
     # Compute groundedness — lexical (are the words supported?) plus numeric
     # (are the NUMBERS supported?). For a data agent the numeric signal is the
