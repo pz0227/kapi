@@ -201,7 +201,7 @@ lexical score.
 .venv/bin/python -m services.eval.router_offline_eval
 .venv/bin/python -m services.eval.holdout_eval
 .venv/bin/python -m services.eval.numeric_grounding_eval
-.venv/bin/python -m pytest analytics-backend/tests/ -q   # 38 tests (router, numeric grounding, analytics engine)
+.venv/bin/python -m pytest analytics-backend/tests/ -q   # 40 tests (router, numeric grounding, analytics engine, stream safety)
 ```
 
 ## Configuring an LLM provider

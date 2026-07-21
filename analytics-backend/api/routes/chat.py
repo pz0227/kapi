@@ -512,33 +512,39 @@ async def chat_stream(
                 yield f"data: {chunk}\n\n"
             timer.mark("stream_done")
             timer.log()
-        finally:
-            # Persist messages after stream
-            user_msg = ChatMessage(
-                id=str(uuid.uuid4()), session_id=body.session_id,
-                role="user", content=body.message, sources=[], token_count=0,
-            )
-            db.add(user_msg)
-            source_dicts = [
-                {"dataset_id": s["dataset_id"], "dataset_name": s["dataset_name"],
-                 "chunk_text": s["chunk_text"], "score": s["score"]}
-                for s in sources
-            ]
-            asst_msg = ChatMessage(
-                id=str(uuid.uuid4()), session_id=body.session_id,
-                role="assistant", content=full_text,
-                sources=source_dicts, token_count=0,
-            )
-            db.add(asst_msg)
-            session.updated_at = datetime.utcnow()
-            await db.commit()
-            # Flag fabricated numbers even on the streamed path (post-hoc):
-            # the trust signal matters most exactly when we auto-computed facts.
+
+            # Trailing metadata is yielded ONLY here, on successful completion.
+            # It must never live in `finally`: if the client disconnects mid-
+            # stream, GeneratorExit is thrown in, and yielding during that
+            # unwinding raises "async generator ignored GeneratorExit".
+            # The numeric trust signal matters most when we auto-computed facts.
             grounding_text = " ".join(s["chunk_text"] for s in sources)
             ng = numeric_groundedness(full_text, grounding_text)
             if ng["ungrounded"]:
                 log.warning("[chat_stream] ungrounded numbers in answer: %s", ng["ungrounded"])
             yield f"data: {json.dumps({'numeric_groundedness': ng})}\n\n"
             yield "data: [DONE]\n\n"
+        finally:
+            # Persist whatever we have, even on an early client disconnect, so
+            # the conversation isn't lost. NO yields in here.
+            try:
+                db.add(ChatMessage(
+                    id=str(uuid.uuid4()), session_id=body.session_id,
+                    role="user", content=body.message, sources=[], token_count=0,
+                ))
+                source_dicts = [
+                    {"dataset_id": s["dataset_id"], "dataset_name": s["dataset_name"],
+                     "chunk_text": s["chunk_text"], "score": s["score"]}
+                    for s in sources
+                ]
+                db.add(ChatMessage(
+                    id=str(uuid.uuid4()), session_id=body.session_id,
+                    role="assistant", content=full_text,
+                    sources=source_dicts, token_count=0,
+                ))
+                session.updated_at = datetime.utcnow()
+                await db.commit()
+            except Exception as exc:
+                log.error("[chat_stream] failed to persist stream messages: %s", exc)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
