@@ -12,9 +12,11 @@ from __future__ import annotations
 
 from collections import Counter
 
-from services.rag import retrieve, format_context
-from services.providers.base import Message
-
+# NOTE: retrieve/format_context and the provider Message type are imported
+# lazily inside run_one (below), not at module top. aggregate() is a pure
+# function, and importing it should not drag in the RAG stack or the provider
+# SDKs (anthropic, etc.). This keeps `from services.eval.runner import aggregate`
+# cheap and lets the test suite run without those heavy deps installed.
 from .metrics import score_case
 from .failure_tags import tag_failure
 
@@ -32,6 +34,10 @@ EVAL_SYSTEM = (
 
 async def run_one(case, provider, dataset_ids: list[str], top_k: int,
                   system_prompt: str, temperature: float, judge_provider=None) -> dict:
+    # Lazy imports (see module note): only the live-provider path needs these.
+    from services.rag import retrieve, format_context
+    from services.providers.base import Message
+
     sources = retrieve(case.question, dataset_ids, top_k=top_k)
     context = format_context(sources)
     user_msg = (f"{context}\n\n---\n\nQuestion: {case.question}"
