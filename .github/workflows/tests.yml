@@ -1,0 +1,35 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: analytics-backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install test dependencies
+        # Lightweight set: the suite reaches heavy deps (torch, faiss,
+        # sentence-transformers) only through lazy imports it never triggers,
+        # so CI runs in seconds instead of downloading ~2GB.
+        run: pip install -r requirements-test.txt
+
+      - name: Run unit tests
+        run: python -m pytest tests/ -q
+
+      - name: Run offline eval suites (deterministic, no LLM)
+        run: |
+          python -m services.eval.router_offline_eval
+          python -m services.eval.holdout_eval

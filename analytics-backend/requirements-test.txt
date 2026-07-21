@@ -1,0 +1,9 @@
+# Minimal deps to run the unit test suite (no torch/faiss/sentence-transformers,
+# which the tests only touch through lazy imports they never trigger). Keeps CI
+# fast: seconds, not the ~2GB torch download.
+pandas>=2.0.0
+numpy>=1.24.0
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
+pytest>=8.0.0
+pytest-asyncio>=0.23.0

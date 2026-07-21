@@ -1,6 +1,10 @@
 <h1 align="center">Kapi — Local-First AI Product Analyst</h1>
 
 <p align="center">
+  <a href="https://github.com/pz0227/kapi/actions/workflows/tests.yml"><img src="https://github.com/pz0227/kapi/actions/workflows/tests.yml/badge.svg" alt="tests"></a>
+</p>
+
+<p align="center">
   RAG-grounded Q&A over your own product data · KPI dashboards · automated PM reports ·
   a rigorous evaluation module · all running locally on your machine.
 </p>
