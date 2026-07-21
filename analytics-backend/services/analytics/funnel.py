@@ -3,6 +3,8 @@ Funnel analysis — ordered step conversion from an events DataFrame.
 """
 import pandas as pd
 
+from ._contract import require_columns
+
 
 def compute_funnel(
     events_df: pd.DataFrame,
@@ -25,6 +27,7 @@ def compute_funnel(
     if not steps:
         return {"steps": [], "overall_conversion": 0.0, "biggest_drop_step": ""}
 
+    require_columns(events_df, [user_col, event_col, time_col], "compute_funnel")
     df = events_df[[user_col, event_col, time_col]].copy()
     df[time_col] = pd.to_datetime(df[time_col])
     df = df[df[event_col].isin(steps)]

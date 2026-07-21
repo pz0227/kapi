@@ -7,6 +7,8 @@ from typing import Any
 import pandas as pd
 import numpy as np
 
+from ._contract import require_columns
+
 
 def _safe_pct_change(curr: float, prev: float) -> float | None:
     if prev and prev != 0:
@@ -23,6 +25,7 @@ def compute_kpis(events_df: pd.DataFrame, users_df: pd.DataFrame | None = None) 
 
     Returns a list of KPI card dicts.
     """
+    require_columns(events_df, ["user_id", "event_name", "timestamp"], "compute_kpis")
     cards: list[dict] = []
     now = events_df["timestamp"].max()
     period_end = now
@@ -127,6 +130,7 @@ def compute_anomalies(events_df: pd.DataFrame, metric: str = "event_count") -> l
     Simple z-score anomaly detection on daily event volume.
     Returns list of AnomalyPoint dicts.
     """
+    require_columns(events_df, ["timestamp"], "compute_anomalies")
     daily = events_df.groupby(events_df["timestamp"].dt.date).size().reset_index()
     daily.columns = ["date", "event_count"]
     daily = daily.sort_values("date")

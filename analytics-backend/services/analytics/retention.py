@@ -5,6 +5,8 @@ from datetime import timedelta
 import pandas as pd
 import numpy as np
 
+from ._contract import require_columns
+
 
 def compute_retention(
     events_df: pd.DataFrame,
@@ -21,6 +23,7 @@ def compute_retention(
     Cohorts are defined by the user's first event date (bucketed by period).
     Returns a RetentionResult dict.
     """
+    require_columns(events_df, [user_col, time_col], "compute_retention")
     df = events_df[[user_col, time_col]].copy()
     df[time_col] = pd.to_datetime(df[time_col])
 

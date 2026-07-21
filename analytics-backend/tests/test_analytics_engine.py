@@ -143,3 +143,24 @@ def test_anomaly_flags_a_real_spike():
     assert spike["z_score"] > 2.0
     # Quiet days are not anomalies.
     assert all(not row["is_anomaly"] for row in out[:10])
+
+
+# ── Column contract (defense in depth) ───────────────────────────────────────
+
+def test_engine_raises_clear_error_on_missing_column():
+    """A missing required column yields a clear MissingColumnsError, not a raw
+    pandas KeyError, for any caller that bypasses route-layer normalization."""
+    from services.analytics._contract import MissingColumnsError
+
+    # events with a 'date' column instead of 'timestamp'
+    bad = pd.DataFrame({"user_id": ["u1"], "event_name": ["view"], "date": ["2026-01-01"]})
+
+    for fn in (
+        lambda: compute_funnel(bad, steps=["view"]),
+        lambda: compute_anomalies(bad),
+    ):
+        with pytest.raises(MissingColumnsError) as exc:
+            fn()
+        # The message names the missing column and lists what's available.
+        assert "timestamp" in str(exc.value)
+        assert "date" in str(exc.value)
