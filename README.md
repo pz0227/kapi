@@ -162,6 +162,17 @@ python main.py                     # FastAPI on http://127.0.0.1:18792
 
 ---
 
+## See it in 5 seconds (no LLM, no key)
+
+```bash
+python examples/trust_demo.py
+```
+
+Runs the three trust mechanisms on real sample data and prints what happened:
+compute-first exactness over the full dataset, a fabricated number getting
+flagged, and an unanswerable question getting silence instead of a guess. Needs
+only pandas/numpy, no provider or gateway.
+
 ## How answers stay honest
 
 Kapi treats "don't mislead the user" as a product requirement with three shipped layers:
