@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     # not searchable via RAG. Surfaced to the UI as `indexed_rows` so
     # truncation is a disclosed limitation instead of a silent one.
     index_max_rows: int = 200
+    # Hard cap on raw upload size, enforced WHILE streaming to disk so an
+    # oversized file is rejected before it can fill the disk (not after).
+    max_upload_mb: int = 100
 
     # Provider defaults
     default_provider: str = "anthropic"

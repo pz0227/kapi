@@ -316,8 +316,28 @@ async def upload_dataset(
     dataset_id = str(uuid.uuid4())
     dest = UPLOAD_DIR / f"{dataset_id}{ext}"
 
-    with open(dest, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+    # Stream to disk with a hard size cap enforced DURING the copy, so an
+    # oversized (or maliciously huge) file is stopped before it fills the disk,
+    # not discovered afterward. Clean up the partial file on overflow.
+    max_bytes = settings.max_upload_mb * 1024 * 1024
+    written = 0
+    try:
+        with open(dest, "wb") as f:
+            while chunk := file.file.read(1024 * 1024):
+                written += len(chunk)
+                if written > max_bytes:
+                    raise ValueError("upload exceeds size cap")
+                f.write(chunk)
+    except ValueError:
+        dest.unlink(missing_ok=True)
+        raise HTTPException(
+            413,
+            f"File exceeds the {settings.max_upload_mb} MB upload limit. "
+            f"Please split the file or pre-aggregate it before uploading.",
+        )
+    except Exception as exc:
+        dest.unlink(missing_ok=True)
+        raise HTTPException(422, f"Could not read the uploaded file: {exc}")
 
     try:
         df = _read_file(dest, fname)
@@ -369,7 +389,11 @@ async def upload_dataset(
 
     background_tasks.add_task(_index_dataset, dataset_id, str(dest), dataset.name, fname, db)
 
-    return DatasetOut.model_validate(dataset)
+    # Give the user actionable data-quality feedback right away.
+    from services.analytics.quality import assess_quality
+    out = DatasetOut.model_validate(dataset)
+    out.quality_notes = assess_quality(df)
+    return out
 
 
 async def _index_dataset(dataset_id: str, filepath: str, name: str, original_name: str, db: AsyncSession) -> None:

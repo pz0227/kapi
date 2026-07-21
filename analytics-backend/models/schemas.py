@@ -24,6 +24,9 @@ class DatasetOut(BaseModel):
     # Rows actually searchable via RAG (min(row_count, settings.index_max_rows)).
     # Lets the UI say "indexed 200 of 8,431 rows" instead of implying full coverage.
     indexed_rows: int | None = None
+    # Upload-time data-quality notes ({level, text}). Populated on create so the
+    # user learns what's analyzable up front, not by hitting an empty view later.
+    quality_notes: list[dict] | None = None
 
     model_config = {"from_attributes": True}
 
