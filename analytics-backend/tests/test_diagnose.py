@@ -53,3 +53,23 @@ def test_markdown_render_and_empty():
 
 def test_never_raises_on_garbage():
     assert diagnose([{"delta": "nan"}], {"steps": "oops"}, {"avg_day7": None}) == [] or True
+
+
+def test_funnel_finding_includes_opportunity_sizing():
+    funnel = {"steps": [
+        {"step": "view", "count": 1000, "conversion_rate": 100.0, "drop_off": 0},
+        {"step": "signup", "count": 300, "conversion_rate": 30.0, "drop_off": 700},
+    ]}
+    out = diagnose(None, funnel, None)
+    assert out and "700 users drop here" in out[0]["reading"]
+    assert "350 more" in out[0]["reading"]  # half of 700
+
+
+def test_opportunity_sizing_skipped_for_tiny_dropoff():
+    funnel = {"steps": [
+        {"step": "a", "count": 100, "conversion_rate": 100.0, "drop_off": 0},
+        {"step": "b", "count": 96, "conversion_rate": 35.0, "drop_off": 4},
+    ]}
+    out = diagnose(None, funnel, None)
+    # Finding still fires, but no sizing sentence for a 4-user drop.
+    assert out and "drop here" not in out[0]["reading"]

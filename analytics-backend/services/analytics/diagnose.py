@@ -34,6 +34,21 @@ def _finding(severity: str, metric: str, reading: str, next_step: str) -> dict:
     return {"severity": severity, "metric": metric, "reading": reading, "next_step": next_step}
 
 
+def _size_opportunity(step: dict) -> str:
+    """Turn a funnel step's real drop-off into an illustrative recovery figure.
+    Returns a leading-space sentence, or '' when there's nothing to size. The
+    number is the actual users lost; the 'half' is an explicit scenario, so this
+    quantifies without over-promising."""
+    lost = step.get("drop_off")
+    if not isinstance(lost, (int, float)) or lost < 10:
+        return ""
+    recoverable = int(lost // 2)
+    if recoverable < 1:
+        return ""
+    return (f" About {int(lost):,} users drop here; recovering half would move "
+            f"~{recoverable:,} more through the funnel.")
+
+
 def diagnose(kpis: list[dict] | None,
              funnel: dict | None,
              retention: dict | None) -> list[dict]:
@@ -81,16 +96,20 @@ def diagnose(kpis: list[dict] | None,
             if worst is not None:
                 cr = worst["conversion_rate"]
                 step = worst.get("step", "a step")
+                # Opportunity sizing from the ACTUAL users lost at this step.
+                # Framed as an illustrative scenario, not a promise: if you
+                # recovered half the drop-off, how many users is that?
+                size = _size_opportunity(worst)
                 if cr < _FUNNEL_STEP_CRITICAL:
                     findings.append(_finding(
                         "critical", "Funnel",
-                        f"Only {cr:.0f}% of users get past '{step}', the funnel's biggest bottleneck.",
+                        f"Only {cr:.0f}% of users get past '{step}', the funnel's biggest bottleneck.{size}",
                         f"Investigate friction at '{step}': is it a UX blocker, a performance issue, or a mismatch of intent?",
                     ))
                 elif cr < _FUNNEL_STEP_WARNING:
                     findings.append(_finding(
                         "warning", "Funnel",
-                        f"'{step}' converts at {cr:.0f}%, the weakest step in the funnel.",
+                        f"'{step}' converts at {cr:.0f}%, the weakest step in the funnel.{size}",
                         f"A/B test a simplification of '{step}' and measure step conversion.",
                     ))
 
