@@ -70,57 +70,10 @@ _EVENT_NAME_ALIASES = {
 }
 
 
-def _normalize_event_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Rename common column-name variants so downstream KPI code can assume
-    canonical names. Only renames if the canonical column doesn't already
-    exist."""
-    rename: dict[str, str] = {}
-    lower = {c.lower().strip(): c for c in df.columns}
-
-    # Timestamp — try aliases in priority order.
-    if "timestamp" not in df.columns:
-        for alias in (
-            "timestamp", "event_time", "occurred_at", "created_at",
-            "event_date", "date", "ts", "datetime", "time",
-            "updated_at", "logged_at", "received_at", "created_date",
-        ):
-            if alias in lower and lower[alias] != "timestamp":
-                rename[lower[alias]] = "timestamp"
-                break
-
-    # user_id
-    if "user_id" not in df.columns:
-        for alias in ("user_id", "userid", "uid", "customer_id", "account_id", "user", "person_id", "visitor_id"):
-            if alias in lower and lower[alias] != "user_id":
-                rename[lower[alias]] = "user_id"
-                break
-
-    # event_name
-    if "event_name" not in df.columns:
-        for alias in ("event_name", "event_type", "event", "action_name", "action", "type", "name"):
-            if alias in lower and lower[alias] != "event_name":
-                rename[lower[alias]] = "event_name"
-                break
-
-    if rename:
-        df = df.rename(columns=rename)
-
-    # Best-effort timestamp parse — if rename surfaced a 'timestamp' column,
-    # try to coerce it to datetime. If parsing fails, leave it as-is and let
-    # downstream logic raise a friendlier error.
-    if "timestamp" in df.columns and not pd.api.types.is_datetime64_any_dtype(df["timestamp"]):
-        try:
-            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
-            # Drop rows where the parse produced NaT — they're unusable for
-            # any time-series KPI and would otherwise crash df['timestamp'].max().
-            if df["timestamp"].isna().all():
-                df = df.drop(columns=["timestamp"])
-            else:
-                df = df.dropna(subset=["timestamp"])
-        except Exception:
-            df = df.drop(columns=["timestamp"], errors="ignore")
-
-    return df
+# The implementation now lives in services.analytics.normalize so reports and
+# any future caller share one normalizer. Kept as a thin alias to avoid churning
+# the call sites in this module.
+from services.analytics.normalize import normalize_event_columns as _normalize_event_columns
 
 
 async def _load_df_and_meta(

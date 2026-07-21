@@ -17,6 +17,7 @@ from services.analytics import (
     compute_kpis, compute_funnel, compute_retention,
     compute_feature_adoption, compute_executive_summary, auto_detect_funnel
 )
+from services.analytics.normalize import normalize_event_columns
 from core.auth import get_current_user, CurrentUser
 from api.routes.data import _read_csv_safe
 
@@ -54,11 +55,10 @@ async def _build_context(dataset_ids: list[str], query: str, db: AsyncSession) -
             continue
         try:
             df = _read_csv_safe(Path(ds.filepath), nrows=None)
-            for col in df.columns:
-                if col.lower() in ("timestamp", "ts", "created_at", "date", "event_time"):
-                    df[col] = pd.to_datetime(df[col])
-                    df = df.rename(columns={col: "timestamp"})
-                    break
+            # Shared normalization: map aliased columns (created_at, customer_id,
+            # ...) to canonical names so reports see KPIs on the same datasets
+            # the analytics view does, not just literally-named ones.
+            df = normalize_event_columns(df)
 
             if ds.dataset_type == "events" and "timestamp" in df.columns and "user_id" in df.columns:
                 kpis = compute_kpis(df)
