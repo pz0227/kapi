@@ -31,11 +31,21 @@ desktop launcher** on top of it. See [Built on OpenClaw](#built-on-openclaw--lic
 
 - **RAG-grounded Q&A** — ask questions in plain English; answers cite the rows they came
   from and flag low-groundedness responses, so the model can't hallucinate numbers your
-  data doesn't support.
+  data doesn't support. A dedicated **numeric-groundedness check** flags any figure in an
+  answer that isn't supported by the data or an exact computation.
+- **Compute-first exact answers** — aggregate questions ("total revenue", "orders per
+  region") are computed over the **full dataset** with pandas, not estimated from a
+  retrieved sample, and the answer says so.
+- **Auto-diagnosis** — the analyst doesn't just report numbers, it reads them: ranked,
+  plain-language findings ("Day-7 retention at 7% points to an activation gap") with a
+  suggested next step, deterministic and grounded in the metrics.
 - **KPI dashboards** — MAU/DAU, events-per-user, top events, plus shape-aware KPIs for
   products / transactions / users datasets (not just event data).
 - **Funnel, retention & anomaly analysis** — conversion funnels, cohort retention, and
   z-score anomaly detection over your uploaded data.
+- **Upload-time data-quality feedback** — on upload you learn what's analyzable up front
+  (missing time/user columns, mostly-empty columns, duplicates), not by hitting an empty
+  view later.
 - **Automated PM reports** — one click for a PRD opportunity summary, weekly review, exec
   brief, experiment proposal, or feature-recommendation memo.
 - **Multi-provider LLM** — OpenAI (Codex OAuth or API key), Anthropic, Gemini, Mistral,
@@ -201,7 +211,7 @@ lexical score.
 .venv/bin/python -m services.eval.router_offline_eval
 .venv/bin/python -m services.eval.holdout_eval
 .venv/bin/python -m services.eval.numeric_grounding_eval
-.venv/bin/python -m pytest analytics-backend/tests/ -q   # 40 tests (router, numeric grounding, analytics engine, stream safety)
+.venv/bin/python -m pytest analytics-backend/tests/ -q   # 57 tests: router, numeric grounding, analytics engine, column contract + normalization, diagnosis, quality, stream safety
 ```
 
 ## Configuring an LLM provider
