@@ -161,4 +161,11 @@ def compute_executive_summary(
                 f"- **{f['feature']}**: {f['adoption_rate']}% adoption {trend_sym}"
             )
 
+    # Auto-diagnosed "so what" layer: ranked, plain-language findings the AI
+    # analyst can build on. Deterministic and grounded in the numbers above.
+    from .diagnose import diagnose, findings_to_markdown
+    findings_md = findings_to_markdown(diagnose(kpis, funnel, retention))
+    if findings_md:
+        lines.append("\n" + findings_md)
+
     return "\n".join(lines)
