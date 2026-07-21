@@ -29,7 +29,6 @@ import uuid
 from datetime import datetime
 from typing import AsyncIterator
 
-import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -49,7 +48,6 @@ from services.providers.base import Message
 from services.rag import retrieve, format_context, groundedness_score
 from services.rag.numeric_grounding import numeric_groundedness
 from services.analytics.aggregate_router import try_compute_answer
-from services.analytics import compute_executive_summary, compute_kpis, compute_funnel, compute_retention, compute_feature_adoption, auto_detect_funnel
 from api.routes.providers import update_provider_error
 
 log = logging.getLogger(__name__)

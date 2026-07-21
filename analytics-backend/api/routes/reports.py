@@ -2,10 +2,10 @@
 Report generation routes.
 """
 import uuid
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-import pandas as pd
 
 from core.database import get_db, Dataset, Report, ProviderConfig
 from models.schemas import ReportRequest, ReportOut

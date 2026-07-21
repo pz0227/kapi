@@ -37,17 +37,16 @@ OpenClaw-inspired additions (carried over from upstream):
 - Error state written back on failed completions (via update_provider_error)
 """
 import uuid
-import asyncio
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 
 from core.config import get_settings
 from core.database import get_db, ProviderConfig
-from models.schemas import ProviderConfigCreate, ProviderConfigOut, ProviderTestResult, BrowserAuthStatus, QuickConnectRequest, TokenSubmitRequest
+from models.schemas import ProviderConfigCreate, ProviderConfigOut, ProviderTestResult, QuickConnectRequest, TokenSubmitRequest
 from services.providers import get_provider, encrypt_key, invalidate, PROVIDER_CATALOGUE
 from services.providers.gateway_proxy_provider import GatewayProxyProvider
 from services.providers.openai_browser_provider import OpenAIBrowserProvider

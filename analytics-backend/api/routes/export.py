@@ -6,7 +6,6 @@ import json
 import logging
 from pathlib import Path
 
-import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession

@@ -7,7 +7,7 @@ from sqlalchemy import select, func
 
 from core.database import get_db, Dataset, ProviderConfig, ChatSession, Report
 from core.config import get_settings
-from core.auth import get_current_user, get_optional_user, CurrentUser
+from core.auth import get_optional_user, CurrentUser
 
 router = APIRouter(prefix="/onboarding", tags=["onboarding"])
 settings = get_settings()

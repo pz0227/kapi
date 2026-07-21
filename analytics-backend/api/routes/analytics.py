@@ -21,9 +21,8 @@ PATCHED by kapi_app_ver_1.3:
   - /summary wraps each section in try/except so a partial failure (e.g. no
     funnel events) doesn't take down the whole page.
 """
-from datetime import timedelta
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,7 +31,6 @@ from sqlalchemy import select
 from core.database import get_db, Dataset
 from core.auth import get_current_user, CurrentUser
 from api.routes.data import _read_csv_safe
-from models.schemas import FunnelResult, RetentionResult
 from services.analytics import (
     compute_kpis,
     compute_anomalies,

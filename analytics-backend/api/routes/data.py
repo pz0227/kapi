@@ -14,7 +14,6 @@ PATCHED by kapi_app_ver_1.3:
 """
 import logging
 import uuid
-import shutil
 from pathlib import Path
 from typing import Any
 
