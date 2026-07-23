@@ -1,7 +1,15 @@
-<h1 align="center">Kapi — Local-First AI Product Analyst</h1>
+<h1 align="center">Kapi, the Local-First AI Product Analyst</h1>
+
+<p align="center">
+  <b>An AI analyst that answers questions about your product data, and proves when its answers can be trusted.</b>
+</p>
 
 <p align="center">
   <a href="https://github.com/pz0227/kapi/actions/workflows/tests.yml"><img src="https://github.com/pz0227/kapi/actions/workflows/tests.yml/badge.svg" alt="tests"></a>
+  <img src="https://img.shields.io/badge/tests-87%20passing-brightgreen" alt="87 tests">
+  <img src="https://img.shields.io/badge/python-3.12-blue" alt="python 3.12">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT">
+  <img src="https://img.shields.io/badge/local--first-no%20data%20leaves%20your%20machine-orange" alt="local-first">
 </p>
 
 <p align="center">
@@ -11,12 +19,22 @@
 
 ---
 
+> **An analytics agent that makes up numbers is worse than no analyst at all.**
+> Most AI data tools will confidently hand you a wrong number. Kapi's whole design
+> is about *not* doing that: it computes exact answers over your full dataset, flags
+> any figure it can't ground, and stays silent on questions the data can't answer.
+> See it in 5 seconds, no API key required:
+>
+> ```bash
+> python examples/trust_demo.py
+> ```
+
 ## What is Kapi?
 
 **Kapi is a local-first AI product-analytics agent.** You drop in a CSV/JSON/XLSX of
 product events, users, or transactions, and Kapi gives you grounded Q&A (with citations
 back to the rows it used), KPI dashboards, funnel / retention / anomaly analysis, and
-one-click PM reports — with everything running on your own machine and only the LLM call
+one-click PM reports, with everything running on your own machine and only the LLM call
 going out to the provider you choose.
 
 Kapi is built on **[OpenClaw](https://github.com/kapi/kapi)**, the open-source AI agent
@@ -26,35 +44,35 @@ a product-analysis & evaluation module** (a FastAPI + RAG backend) and a **Windo
 desktop launcher** on top of it. See [Built on OpenClaw](#built-on-openclaw--license).
 
 > **This repo contains:** the `analytics-backend/` (the product-analysis + RAG + eval
-> module — the part this project adds) and a `launcher/` (the Windows installer that pulls
+> module, the part this project adds) and a `launcher/` (the Windows installer that pulls
 > the OpenClaw `kapi` gateway from npm and wires everything into a one-click desktop app).
 
 ---
 
 ## Key features
 
-- **RAG-grounded Q&A** — ask questions in plain English; answers cite the rows they came
+- **RAG-grounded Q&A**, ask questions in plain English; answers cite the rows they came
   from and flag low-groundedness responses, so the model can't hallucinate numbers your
   data doesn't support. A dedicated **numeric-groundedness check** flags any figure in an
   answer that isn't supported by the data or an exact computation.
-- **Compute-first exact answers** — aggregate questions ("total revenue", "orders per
+- **Compute-first exact answers**, aggregate questions ("total revenue", "orders per
   region") are computed over the **full dataset** with pandas, not estimated from a
   retrieved sample, and the answer says so.
-- **Auto-diagnosis** — the analyst doesn't just report numbers, it reads them: ranked,
+- **Auto-diagnosis**, the analyst doesn't just report numbers, it reads them: ranked,
   plain-language findings ("Day-7 retention at 7% points to an activation gap") with a
   suggested next step, deterministic and grounded in the metrics.
-- **KPI dashboards** — MAU/DAU, events-per-user, top events, plus shape-aware KPIs for
+- **KPI dashboards**, MAU/DAU, events-per-user, top events, plus shape-aware KPIs for
   products / transactions / users datasets (not just event data).
-- **Funnel, retention & anomaly analysis** — conversion funnels, cohort retention, and
+- **Funnel, retention & anomaly analysis**, conversion funnels, cohort retention, and
   z-score anomaly detection over your uploaded data.
-- **Upload-time data-quality feedback** — on upload you learn what's analyzable up front
+- **Upload-time data-quality feedback**, on upload you learn what's analyzable up front
   (missing time/user columns, mostly-empty columns, duplicates), not by hitting an empty
   view later.
-- **Automated PM reports** — one click for a PRD opportunity summary, weekly review, exec
+- **Automated PM reports**, one click for a PRD opportunity summary, weekly review, exec
   brief, experiment proposal, or feature-recommendation memo.
-- **Multi-provider LLM** — OpenAI (Codex OAuth or API key), Anthropic, Gemini, Mistral,
-  xAI, DeepSeek, or local Ollama — your choice.
-- **Rigorous evaluation module** — a 51-case labeled test set (answerable / unanswerable /
+- **Multi-provider LLM**, OpenAI (Codex OAuth or API key), Anthropic, Gemini, Mistral,
+  xAI, DeepSeek, or local Ollama, your choice.
+- **Rigorous evaluation module**, a 51-case labeled test set (answerable / unanswerable /
   adversarial) with ground truth computed from the data, scored on **three separate axes**
   (lexical support · answer correctness · refusal accuracy), **failure-mode tagging with
   retriever-vs-model fault attribution**, an **LLM-as-judge** grounded by the computed gold
@@ -67,27 +85,27 @@ desktop launcher** on top of it. See [Built on OpenClaw](#built-on-openclaw--lic
 
 Kapi runs as a local desktop app with five product-analysis views.
 
-### Dashboard — KPIs, insights & charts
+### Dashboard, KPIs, insights & charts
 Auto-generated insights (concentration, Pareto, skew), a top-categories bar chart, and a numeric-distribution histogram, computed locally over the selected dataset.
 
 ![Kapi Dashboard](docs/screenshots/dashboard.png)
 
-### Data — upload & index datasets
+### Data, upload & index datasets
 Drag-and-drop upload and indexing for CSV / TSV / JSON / JSONL / XLSX / Parquet / XML, with automatic dataset-type detection (events, users, products, transactions, …).
 
 ![Kapi Data](docs/screenshots/data.png)
 
-### AI Analyst — RAG-grounded Q&A
+### AI Analyst, RAG-grounded Q&A
 Ask questions in plain English and get answers grounded in your data, with low-groundedness flagging.
 
 ![Kapi AI Analyst](docs/screenshots/ai-analyst.png)
 
-### Reports — auto-generated PM deliverables
+### Reports, auto-generated PM deliverables
 One-click PRD opportunity summary, weekly review, executive brief, experiment proposal, or feature-recommendation memo, generated from your data.
 
 ![Kapi Reports](docs/screenshots/reports.png)
 
-### Eval — three axes, failure modes & judge κ
+### Eval, three axes, failure modes & judge κ
 A 51-case labeled test set scored on three separate axes (lexical support · answer correctness · refusal accuracy), failure-mode tagging with retriever-vs-model fault attribution, and an LLM-as-judge with Cohen's κ calibration.
 
 ![Kapi Eval](docs/screenshots/eval.png)
@@ -102,7 +120,7 @@ A 51-case labeled test set scored on three separate axes (lexical support · ans
 - **Python 3.10+** (for the analytics backend)
 - **Google Chrome** (the desktop app uses Chrome `--app` mode)
 
-### Option A — one-click desktop launcher (recommended)
+### Option A, one-click desktop launcher (recommended)
 
 ```powershell
 git clone https://github.com/pz0227/kapi.git
@@ -118,7 +136,7 @@ Reports, Eval).
 
 > First launch can take ~2 minutes (cold start). Logs: `%LOCALAPPDATA%\KapiTest\launcher.log`.
 
-### Option B — manual / dev setup (run the backend directly)
+### Option B, manual / dev setup (run the backend directly)
 
 Use this to read, hack on, or run the analytics backend + eval without the desktop wrapper.
 
@@ -136,7 +154,7 @@ python main.py                    # FastAPI on http://127.0.0.1:18792
 
 Then open the dashboard URL printed by `kapi dashboard`.
 
-### macOS / Linux — manual setup
+### macOS / Linux, manual setup
 
 The desktop launcher is Windows-only for now, but the full stack (gateway + analytics
 backend + dashboard) runs anywhere Node and Python do:
@@ -157,7 +175,7 @@ python main.py                     # FastAPI on http://127.0.0.1:18792
 
 > First AI query normally pays a ~45s model-load cost; the backend pre-warms the
 > embedder in the background at startup, so give it ~30s after boot and the first
-> query returns warm. Latency is logged per stage — `grep TIMING` the backend logs
+> query returns warm. Latency is logged per stage, `grep TIMING` the backend logs
 > to see where time goes (embed / search / context / first token).
 
 ---
@@ -177,11 +195,11 @@ only pandas/numpy, no provider or gateway.
 
 Kapi treats "don't mislead the user" as a product requirement with three shipped layers:
 
-1. **Disclosed coverage** — retrieval indexes the first 200 rows of a dataset
+1. **Disclosed coverage**, retrieval indexes the first 200 rows of a dataset
    (configurable). Both the UI (`indexed_rows`) and the model's own context header
    state exactly how many rows answers draw from, so partial coverage is never
    silently presented as complete.
-2. **Compute-first routing** — aggregate questions ("total revenue", "how many
+2. **Compute-first routing**, aggregate questions ("total revenue", "how many
    refunded orders in EU", "average by region") are detected and answered by exact
    pandas computation over the FULL dataset, including filtered and group-by
    variants, instead of being estimated from retrieved samples. The router also
@@ -189,7 +207,7 @@ Kapi treats "don't mislead the user" as a product requirement with three shipped
    of things the dataset does not contain, and metrics no column matches are
    suppressed rather than approximated (0/20 false fires on the eval set's
    unanswerable and adversarial cases; 31/31 exact on answerable cases).
-3. **Visible provenance** — computed facts appear in the answer's sources as
+3. **Visible provenance**, computed facts appear in the answer's sources as
    "(computed, full dataset)" entries, so users can see which parts of an answer
    came from exact computation versus retrieval.
 
@@ -233,9 +251,9 @@ lexical score.
 
 Kapi never ships keys. Provide **one** of the following:
 
-1. **In-app / CLI** — run `kapi configure`, or use the dashboard's provider setup. Best for
+1. **In-app / CLI**, run `kapi configure`, or use the dashboard's provider setup. Best for
    OpenAI Codex OAuth (no key to paste): `kapi models auth login --provider openai-codex`.
-2. **Environment file** — copy [`.env.example`](.env.example) to `analytics-backend/.env`
+2. **Environment file**, copy [`.env.example`](.env.example) to `analytics-backend/.env`
    and set one key (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, …).
 
 > `.env` is gitignored. **Never commit real keys.** Your keys live only on your machine
@@ -249,7 +267,7 @@ The eval runs the labeled test set against the **live retriever + live LLM** and
 JSON + Markdown report. From `analytics-backend/` (with the gateway running):
 
 ```powershell
-# 0. Health check — confirms the LLM is reachable (no "(provider_error)")
+# 0. Health check: confirms the LLM is reachable (no "(provider_error)")
 python -m services.eval.run_eval --limit 1
 
 # 1. Full run (51 cases) with the LLM-as-judge + Cohen's κ calibration
@@ -263,14 +281,14 @@ Reports are written to `analytics-backend/storage/eval_runs/<run_id>/` (gitignor
 
 ### How to read the output
 - **Three separate axes** (never blended into one score):
-  - **Competence** — % of *answerable* cases answered correctly vs the computed gold.
-  - **Honesty** — % of *unanswerable / adversarial* cases correctly declined.
-  - **Lexical support** — word-overlap with retrieved chunks; a **secondary** signal, **not**
+  - **Competence**, % of *answerable* cases answered correctly vs the computed gold.
+  - **Honesty**, % of *unanswerable / adversarial* cases correctly declined.
+  - **Lexical support**, word-overlap with retrieved chunks; a **secondary** signal, **not**
     correctness (an answer can be lexically supported yet numerically wrong).
-- **Failure distribution + fault owner** — each failure is tagged and attributed to the
-  **retriever** (e.g. `retrieval_miss` — fix chunking/retrieval) or the **model** (e.g.
-  `hallucinated_fact`, `missed_refusal` — fix the prompt/model).
-- **Judge κ** — `judge vs deterministic: agreement=… kappa=…`. **Cohen's κ** (chance-corrected)
+- **Failure distribution + fault owner**, each failure is tagged and attributed to the
+  **retriever** (e.g. `retrieval_miss`, fix chunking/retrieval) or the **model** (e.g.
+  `hallucinated_fact`, `missed_refusal`, fix the prompt/model).
+- **Judge κ**, `judge vs deterministic: agreement=… kappa=…`. **Cohen's κ** (chance-corrected)
   tells you how much to trust the same-model judge; κ > ~0.6 is "substantial." Disagreements
   are listed so you can inspect where the judge and the deterministic metrics diverge.
 
@@ -304,15 +322,15 @@ kapi/
 
 ## Built on OpenClaw · License
 
-Kapi is built on **[OpenClaw](https://github.com/kapi/kapi)** — the open-source, MIT-licensed
+Kapi is built on **[OpenClaw](https://github.com/kapi/kapi)**, the open-source, MIT-licensed
 AI agent framework created by **Peter Steinberger** (distributed as the `kapi` npm package).
 OpenClaw provides the local gateway, agent runtime, skills, memory, and multi-channel
 integrations. The desktop launcher in this repo installs OpenClaw via `npm install -g kapi`;
 it is **not** re-vendored here.
 
-This repository's additions — the `analytics-backend` product-analysis + RAG + evaluation
-module and the Windows launcher — are released under the **MIT License**, and the upstream
+This repository's additions, the `analytics-backend` product-analysis + RAG + evaluation
+module and the Windows launcher, are released under the **MIT License**, and the upstream
 OpenClaw copyright and license are preserved. See [LICENSE](LICENSE).
 
-- OpenClaw / `kapi` framework — © 2025 Peter Steinberger (MIT)
-- Kapi product-analysis & evaluation module + launcher — © 2026 Polly Zheng (MIT)
+- OpenClaw / `kapi` framework, © 2025 Peter Steinberger (MIT)
+- Kapi product-analysis & evaluation module + launcher, © 2026 Polly Zheng (MIT)
