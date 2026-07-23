@@ -193,6 +193,34 @@ only pandas/numpy, no provider or gateway.
 
 ## How answers stay honest
 
+```
+                    your question
+                          │
+              ┌───────────▼───────────┐
+              │   is it an aggregate?  │
+              └─────┬────────────┬─────┘
+             yes    │            │   no
+        ┌───────────▼──┐    ┌────▼─────────────┐
+        │ COMPUTE-FIRST│    │  RAG RETRIEVAL   │
+        │ exact answer │    │ (top-k rows,     │
+        │ over ALL rows│    │  coverage shown) │
+        └───────┬──────┘    └────────┬─────────┘
+                └────────┬───────────┘
+                         ▼
+              ┌────────────────────────┐
+              │  LLM writes the answer │
+              └───────────┬────────────┘
+                          ▼
+        ┌──────────────────────────────────────┐
+        │  NUMERIC GROUNDING  (last line of      │
+        │  defense): every number checked        │
+        │  against the data; fabricated → flag   │
+        └───────────────────┬────────────────────┘
+                            ▼
+                  answer + provenance
+             (silence if nothing grounds it)
+```
+
 Kapi treats "don't mislead the user" as a product requirement with three shipped layers:
 
 1. **Disclosed coverage**, retrieval indexes the first 200 rows of a dataset
