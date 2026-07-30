@@ -18,6 +18,7 @@ from services.analytics import (
     compute_feature_adoption, compute_executive_summary, auto_detect_funnel
 )
 from services.analytics.normalize import normalize_event_columns
+from services.analytics.diagnose import diagnose, findings_to_markdown
 from core.auth import get_current_user, CurrentUser
 from api.routes.data import _read_csv_safe
 
@@ -67,6 +68,12 @@ async def _build_context(dataset_ids: list[str], query: str, db: AsyncSession) -
                 features = compute_feature_adoption(df)
                 summary = compute_executive_summary(kpis, funnel, retention, features)
                 context_parts.append(summary)
+                # Deterministic diagnosis findings: give the report LLM the
+                # ranked, rule-based reading of the metrics so it writes around
+                # verified findings instead of inventing its own interpretation.
+                findings_md = findings_to_markdown(diagnose(kpis, funnel, retention))
+                if findings_md:
+                    context_parts.append(findings_md)
         except Exception:
             pass
 

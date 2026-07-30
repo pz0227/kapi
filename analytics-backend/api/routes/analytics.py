@@ -41,6 +41,7 @@ from services.analytics import (
     compute_feature_adoption,
     compute_executive_summary,
 )
+from services.analytics.diagnose import diagnose
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -642,6 +643,10 @@ async def get_summary(
         "retention": retention,
         "features": features,
         "executive_summary": summary,
+        # Ranked, deterministic findings (severity/reading/next_step) so the
+        # dashboard can say WHY a number matters, not just show it. diagnose()
+        # never raises; worst case is an empty list.
+        "findings": diagnose(kpis, funnel, retention),
         "dataset_type": ds.dataset_type,
         "dataset_name": ds.name,
     }
