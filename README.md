@@ -37,7 +37,7 @@ back to the rows it used), KPI dashboards, funnel / retention / anomaly analysis
 one-click PM reports, with everything running on your own machine and only the LLM call
 going out to the provider you choose.
 
-Kapi is built on **[OpenClaw](https://github.com/kapi/kapi)**, the open-source AI agent
+Kapi is built on **[OpenClaw](https://github.com/openclaw/openclaw)**, the open-source AI agent
 framework by **Peter Steinberger** (MIT-licensed, distributed as the `kapi` npm package).
 OpenClaw provides the local **gateway, agent, skills, and memory**; **this repository adds
 a product-analysis & evaluation module** (a FastAPI + RAG backend) and a **Windows
