@@ -350,7 +350,7 @@ kapi/
 
 ## Built on OpenClaw · License
 
-Kapi is built on **[OpenClaw](https://github.com/kapi/kapi)**, the open-source, MIT-licensed
+Kapi is built on **[OpenClaw](https://github.com/openclaw/openclaw)**, the open-source, MIT-licensed
 AI agent framework created by **Peter Steinberger** (distributed as the `kapi` npm package).
 OpenClaw provides the local gateway, agent runtime, skills, memory, and multi-channel
 integrations. The desktop launcher in this repo installs OpenClaw via `npm install -g kapi`;
